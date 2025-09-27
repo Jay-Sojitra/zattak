@@ -17,15 +17,22 @@ export function SwapDepositInterface({
   const [showAdvanced, setShowAdvanced] = useState(false)
 
   const calculateEstimatedRIF = () => {
-    // Mock calculation - would be real pricing in production
+    // Realistic calculation based on actual swap rates from images
     return selectedTokens.reduce((total, token) => {
       const amount = parseFloat(token.amount || '0')
-      const usdValue = token.symbol === 'rUSDT' ? amount * 1 : 
-                      token.symbol === 'rUSDC' ? amount * 1 : 
-                      token.symbol === 'rBTC' ? amount * 65000 :
-                      token.symbol === 'wETH' ? amount * 3200 : amount
-      const mockRIFRate = 20 // Assuming $0.05 per RIF, so $1 = 20 RIF
-      return total + (usdValue * mockRIFRate)
+      
+      // Based on the swap interface images:
+      // 1 rUSDT = 17.1143 RIF
+      // 1 rUSDC = 17.1143 RIF (same as USDT)
+      // 1 rBTC = 1,882,594 RIF
+      // 1 wETH = ~56,000 RIF (estimated from ETH price)
+      
+      const rifRate = token.symbol === 'rUSDT' ? 17.1143 : 
+                     token.symbol === 'rUSDC' ? 17.1143 : 
+                     token.symbol === 'rBTC' ? 1882594 :
+                     token.symbol === 'wETH' ? 56000 : 17.1143
+      
+      return total + (amount * rifRate)
     }, 0)
   }
 
@@ -115,7 +122,7 @@ export function SwapDepositInterface({
                 {estimatedRIF.toFixed(2)} tRIF
               </p>
               <p className="text-sm text-gray-500">
-                ≈ ${(estimatedRIF * 0.25).toFixed(2)}
+                ≈ ${(estimatedRIF * 0.058).toFixed(2)}
               </p>
             </div>
           </div>
@@ -196,7 +203,7 @@ export function SwapDepositInterface({
       <div className="space-y-3">
         <div className="flex justify-between text-sm">
           <span className="text-gray-600">Rate</span>
-          <span>$1 ≈ 20 tRIF</span>
+          <span>1 rUSDT ≈ 17.11 RIF</span>
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-gray-600">Slippage Tolerance</span>

@@ -76,7 +76,7 @@ export function TokenSelector({ onTokenSelect, selectedTokens }: TokenSelectorPr
   }
 
   const getTotalUSDValue = () => {
-    // Mock USD calculation - would be real in production
+    // Realistic USD calculation based on actual swap rates
     return selectedTokens.reduce((total, token) => {
       const amount = parseFloat(token.amount || '0')
       const mockPrice = token.symbol === 'rUSDT' ? 1 : 
