@@ -1,0 +1,22 @@
+[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+remappings = [
+    "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/"
+]
+
+# Rootstock network configuration
+[rpc_endpoints]
+rootstock = "https://public-node.rsk.co"
+
+# For forking tests
+[profile.fork]
+fork_url = "https://public-node.rsk.co"
+fork_block_number = 5900000  # Use a recent block number
+
+# Gas settings for Rootstock
+gas_limit = 6800000
+gas_price = 60000000  # 0.06 gwei
+
+# See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

@@ -1,0 +1,17 @@
+{
+  "name": "zattak",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "sushi": "^6.1.14",
+    "viem": "^2.37.8",
+    "zod": "^4.1.11"
+  }
+}
