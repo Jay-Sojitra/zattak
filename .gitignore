@@ -13,7 +13,13 @@ yarn.lock
 .env.test.local
 .env.production.local
 
+
+
 # Foundry
+lib/
+lib/*
+lib/forge-std/*
+lib/openzeppelin-contracts/*
 cache/
 cache_f/
 out/
@@ -21,7 +27,7 @@ broadcast/
 .cache/
 
 # Foundry dependencies (uncomment next line for new projects)
-lib/
+rif-deposit-test/lib/*
 
 # IDE and Editor files
 .vscode/
