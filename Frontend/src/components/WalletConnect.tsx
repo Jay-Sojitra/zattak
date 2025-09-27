@@ -1,66 +1,9 @@
-import { useState } from 'react'
-import { Wallet, CheckCircle, AlertCircle } from 'lucide-react'
+import { ConnectButton } from '@rainbow-me/rainbowkit'
+import { AlertCircle } from 'lucide-react'
 
-interface WalletConnectProps {
-  onConnect: (connected: boolean) => void
-  isConnected: boolean
-}
-
-export function WalletConnect({ onConnect, isConnected }: WalletConnectProps) {
-  const [isLoading, setIsLoading] = useState(false)
-  const [address, setAddress] = useState('')
-
-  const handleConnect = async () => {
-    setIsLoading(true)
-    
-    try {
-      // Simulate wallet connection (will be replaced with actual wallet integration)
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      // Mock address for demo
-      const mockAddress = '0x742d35Cc6432C672B38fD5FC5e5fD0d5e7d82B8D'
-      setAddress(mockAddress)
-      onConnect(true)
-    } catch (error) {
-      console.error('Failed to connect wallet:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const handleDisconnect = () => {
-    setAddress('')
-    onConnect(false)
-  }
-
-  if (isConnected) {
-    return (
-      <div className="flex items-center justify-between p-4 bg-green-50 border border-green-200 rounded-xl">
-        <div className="flex items-center gap-3">
-          <CheckCircle className="w-6 h-6 text-green-500" />
-          <div>
-            <p className="font-semibold text-green-800">Wallet Connected</p>
-            <p className="text-sm text-green-600 font-mono">
-              {address.slice(0, 6)}...{address.slice(-4)}
-            </p>
-          </div>
-        </div>
-        <button
-          onClick={handleDisconnect}
-          className="btn-secondary text-sm"
-        >
-          Disconnect
-        </button>
-      </div>
-    )
-  }
-
+export function WalletConnect() {
   return (
     <div className="text-center">
-      <div className="w-16 h-16 bg-gradient-to-r from-rootstock-orange to-rif-primary rounded-full flex items-center justify-center mx-auto mb-4">
-        <Wallet className="w-8 h-8 text-white" />
-      </div>
-      
       <h2 className="text-2xl font-semibold mb-2 text-gray-800">
         Connect Your Wallet
       </h2>
@@ -77,20 +20,86 @@ export function WalletConnect({ onConnect, isConnected }: WalletConnectProps) {
         </p>
       </div>
 
-      <button
-        onClick={handleConnect}
-        disabled={isLoading}
-        className="btn-primary text-lg px-8 py-4"
-      >
-        {isLoading ? (
-          <div className="flex items-center gap-2">
-            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-            Connecting...
-          </div>
-        ) : (
-          'Connect Wallet'
-        )}
-      </button>
+      {/* RainbowKit Connect Button */}
+      <div className="flex justify-center">
+        <ConnectButton.Custom>
+          {({
+            account,
+            chain,
+            openAccountModal,
+            openChainModal,
+            openConnectModal,
+            mounted,
+          }) => {
+            const ready = mounted
+            const connected = ready && account && chain
+
+            return (
+              <div
+                {...(!ready && {
+                  'aria-hidden': true,
+                  style: {
+                    opacity: 0,
+                    pointerEvents: 'none',
+                    userSelect: 'none',
+                  },
+                })}
+              >
+                {(() => {
+                  if (!connected) {
+                    return (
+                      <button
+                        onClick={openConnectModal}
+                        type="button"
+                        className="btn-primary text-lg px-8 py-4"
+                      >
+                        Connect Wallet
+                      </button>
+                    )
+                  }
+
+                  if (chain.unsupported) {
+                    return (
+                      <button
+                        onClick={openChainModal}
+                        type="button"
+                        className="bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-6 rounded-xl"
+                      >
+                        Wrong network
+                      </button>
+                    )
+                  }
+
+                  return (
+                    <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-xl">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                          <span className="text-white text-sm">✓</span>
+                        </div>
+                        <div>
+                          <p className="font-semibold text-green-800">
+                            {account.displayName}
+                          </p>
+                          <p className="text-sm text-green-600">
+                            {chain.name}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={openAccountModal}
+                        type="button"
+                        className="btn-secondary text-sm"
+                      >
+                        Account
+                      </button>
+                    </div>
+                  )
+                })()}
+              </div>
+            )
+          }}
+        </ConnectButton.Custom>
+      </div>
 
       {/* Supported Wallets */}
       <div className="mt-6 text-sm text-gray-500">
@@ -99,6 +108,7 @@ export function WalletConnect({ onConnect, isConnected }: WalletConnectProps) {
           <span className="px-3 py-1 bg-gray-100 rounded-full">MetaMask</span>
           <span className="px-3 py-1 bg-gray-100 rounded-full">WalletConnect</span>
           <span className="px-3 py-1 bg-gray-100 rounded-full">Coinbase</span>
+          <span className="px-3 py-1 bg-gray-100 rounded-full">Rainbow</span>
         </div>
       </div>
     </div>

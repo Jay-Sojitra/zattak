@@ -1,20 +1,17 @@
 import { useState } from 'react'
+import { useAccount } from 'wagmi'
 import { WalletConnect } from './components/WalletConnect'
 import { TokenSelector } from './components/TokenSelector'
 import { SwapDepositInterface } from './components/SwapDepositInterface'
 import { Header } from './components/Header'
 import { Footer } from './components/Footer'
 import { StatsSection } from './components/StatsSection'
-import { SelectedToken } from './types'
+import type { SelectedToken } from './types'
 
 function App() {
-  const [isWalletConnected, setIsWalletConnected] = useState(false)
+  const { isConnected } = useAccount()
   const [selectedTokens, setSelectedTokens] = useState<SelectedToken[]>([])
   const [isLoading, setIsLoading] = useState(false)
-
-  const handleWalletConnect = (connected: boolean) => {
-    setIsWalletConnected(connected)
-  }
 
   const handleTokenSelect = (tokens: SelectedToken[]) => {
     setSelectedTokens(tokens)
@@ -43,7 +40,7 @@ function App() {
       <main className="container mx-auto px-4 py-8">
         {/* Hero Section */}
         <div className="text-center mb-12">
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-rootstock-orange to-rif-primary bg-clip-text text-transparent mb-4">
+          <h1 className="text-5xl font-bold text-rootstock-orange mb-4">
             RIF Staking Platform
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
@@ -73,14 +70,11 @@ function App() {
         <div className="max-w-4xl mx-auto space-y-8">
           {/* Wallet Connection */}
           <div className="card">
-            <WalletConnect 
-              onConnect={handleWalletConnect}
-              isConnected={isWalletConnected}
-            />
+            <WalletConnect />
           </div>
 
           {/* Token Selection */}
-          {isWalletConnected && (
+          {isConnected && (
             <div className="card">
               <h2 className="text-2xl font-semibold mb-6 text-gray-800">
                 Select Tokens to Swap & Stake
@@ -93,7 +87,7 @@ function App() {
           )}
 
           {/* Swap and Deposit Interface */}
-          {isWalletConnected && selectedTokens.length > 0 && (
+          {isConnected && selectedTokens.length > 0 && (
             <div className="card">
               <SwapDepositInterface 
                 selectedTokens={selectedTokens}
@@ -108,7 +102,7 @@ function App() {
         <div className="max-w-6xl mx-auto mt-16">
           <div className="grid md:grid-cols-3 gap-8">
             <div className="card-gradient text-center">
-              <div className="w-16 h-16 bg-gradient-to-r from-rootstock-orange to-rif-primary rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-rootstock-orange rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-2xl">🔄</span>
               </div>
               <h3 className="text-xl font-semibold mb-2">Multi-Token Swap</h3>
@@ -118,7 +112,7 @@ function App() {
             </div>
             
             <div className="card-gradient text-center">
-              <div className="w-16 h-16 bg-gradient-to-r from-rootstock-orange to-rif-primary rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-rootstock-orange rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-2xl">⚡</span>
               </div>
               <h3 className="text-xl font-semibold mb-2">One-Click Staking</h3>
@@ -128,7 +122,7 @@ function App() {
             </div>
             
             <div className="card-gradient text-center">
-              <div className="w-16 h-16 bg-gradient-to-r from-rootstock-orange to-rif-primary rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-rootstock-orange rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-2xl">🏆</span>
               </div>
               <h3 className="text-xl font-semibold mb-2">Maximize Returns</h3>

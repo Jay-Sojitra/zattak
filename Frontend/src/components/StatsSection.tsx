@@ -22,7 +22,7 @@ export function StatsSection() {
       label: 'Current APY',
       value: '12.5%',
       change: '+0.3%',
-      color: 'text-rif-primary'
+      color: 'text-rootstock-orange'
     },
     {
       icon: Zap,
@@ -41,7 +41,7 @@ export function StatsSection() {
             <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 ${
               index === 0 ? 'bg-green-100' :
               index === 1 ? 'bg-blue-100' :
-              index === 2 ? 'bg-rif-primary/10' :
+              index === 2 ? 'bg-rootstock-orange/10' :
               'bg-orange-100'
             }`}>
               <stat.icon className={`w-6 h-6 ${stat.color}`} />

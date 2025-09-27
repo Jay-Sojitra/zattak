@@ -1,4 +1,5 @@
-import { Github, ExternalLink } from 'lucide-react'
+import { Github } from 'lucide-react'
+import { ConnectButton } from '@rainbow-me/rainbowkit'
 
 export function Header() {
   return (
@@ -7,8 +8,8 @@ export function Header() {
         <div className="flex items-center justify-between">
           {/* Logo and Brand */}
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-rootstock-orange to-rif-primary rounded-xl flex items-center justify-center">
-              <span className="text-white font-bold text-lg">R</span>
+            <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center bg-white">
+              <img src="/logo_light.jpg" alt="Rootstock Logo" className="w-8 h-8 object-contain" />
             </div>
             <div>
               <h1 className="text-xl font-bold text-gray-800">RIF Staking</h1>
@@ -16,30 +17,6 @@ export function Header() {
             </div>
           </div>
 
-          {/* Navigation Links */}
-          <nav className="hidden md:flex items-center space-x-6">
-            <a 
-              href="#"
-              className="text-gray-600 hover:text-gray-800 transition-colors"
-            >
-              How it Works
-            </a>
-            <a 
-              href="#"
-              className="text-gray-600 hover:text-gray-800 transition-colors"
-            >
-              FAQ
-            </a>
-            <a 
-              href="https://testnet.rootstock.io/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 text-gray-600 hover:text-gray-800 transition-colors"
-            >
-              Rootstock Testnet
-              <ExternalLink className="w-3 h-3" />
-            </a>
-          </nav>
 
           {/* Right side actions */}
           <div className="flex items-center space-x-4">
@@ -56,6 +33,11 @@ export function Header() {
             <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-green-100 text-green-700 rounded-full text-sm">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
               Testnet
+            </div>
+
+            {/* Connect Button */}
+            <div className="hidden md:block">
+              <ConnectButton />
             </div>
           </div>
         </div>

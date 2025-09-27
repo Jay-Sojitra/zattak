@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { ArrowDownUp, Zap, Shield, TrendingUp, AlertTriangle } from 'lucide-react'
-import { SelectedToken } from '../types'
+import type { SelectedToken } from '../types'
 
 interface SwapDepositInterfaceProps {
   selectedTokens: SelectedToken[]
@@ -20,8 +20,12 @@ export function SwapDepositInterface({
     // Mock calculation - would be real pricing in production
     return selectedTokens.reduce((total, token) => {
       const amount = parseFloat(token.amount || '0')
-      const mockRIFRate = token.symbol === 'USDT' || token.symbol === 'rUSDT' ? 4 : 1
-      return total + (amount * mockRIFRate)
+      const usdValue = token.symbol === 'rUSDT' ? amount * 1 : 
+                      token.symbol === 'rUSDC' ? amount * 1 : 
+                      token.symbol === 'rBTC' ? amount * 65000 :
+                      token.symbol === 'wETH' ? amount * 3200 : amount
+      const mockRIFRate = 20 // Assuming $0.05 per RIF, so $1 = 20 RIF
+      return total + (usdValue * mockRIFRate)
     }, 0)
   }
 
@@ -45,7 +49,7 @@ export function SwapDepositInterface({
         </h2>
         <button
           onClick={() => setShowAdvanced(!showAdvanced)}
-          className="text-sm text-rif-primary hover:text-rif-secondary transition-colors"
+          className="text-sm text-rootstock-orange hover:text-rootstock-orange-dark transition-colors"
         >
           {showAdvanced ? 'Hide' : 'Show'} Advanced
         </button>
@@ -62,8 +66,13 @@ export function SwapDepositInterface({
           {selectedTokens.map((token) => (
             <div key={token.address} className="flex justify-between items-center p-4 bg-gray-50 rounded-xl">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-gradient-to-r from-rootstock-orange to-rif-primary rounded-full flex items-center justify-center">
-                  <span className="text-white font-bold text-xs">{token.symbol[0]}</span>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center bg-white border border-gray-200 p-1">
+                  <img 
+                    src={token.logoUrl} 
+                    alt={token.symbol} 
+                    className="w-full h-full object-contain"
+                    loading="eager"
+                  />
                 </div>
                 <div>
                   <p className="font-medium">{token.symbol}</p>
@@ -72,7 +81,14 @@ export function SwapDepositInterface({
               </div>
               <div className="text-right">
                 <p className="font-semibold">{token.amount || '0'}</p>
-                <p className="text-sm text-gray-500">≈ ${((parseFloat(token.amount || '0')) * 1).toFixed(2)}</p>
+                <p className="text-sm text-gray-500">≈ ${(() => {
+                  const amount = parseFloat(token.amount || '0')
+                  const price = token.symbol === 'rUSDT' ? 1 : 
+                               token.symbol === 'rUSDC' ? 1 : 
+                               token.symbol === 'rBTC' ? 65000 :
+                               token.symbol === 'wETH' ? 3200 : 1
+                  return (amount * price).toFixed(2)
+                })()}</p>
               </div>
             </div>
           ))}
@@ -84,9 +100,9 @@ export function SwapDepositInterface({
             <TrendingUp className="w-5 h-5" />
             You'll Receive & Stake
           </h3>
-          <div className="p-6 card-gradient rounded-xl border-2 border-rif-primary/20">
+          <div className="p-6 card-gradient rounded-xl border-2 border-rootstock-orange/30">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 bg-gradient-to-r from-rootstock-orange to-rif-primary rounded-full flex items-center justify-center">
+              <div className="w-12 h-12 bg-rootstock-orange rounded-full flex items-center justify-center">
                 <span className="text-white font-bold">tRIF</span>
               </div>
               <div>
@@ -95,7 +111,7 @@ export function SwapDepositInterface({
               </div>
             </div>
             <div className="text-right">
-              <p className="text-2xl font-bold text-rif-primary">
+              <p className="text-2xl font-bold text-rootstock-orange">
                 {estimatedRIF.toFixed(2)} tRIF
               </p>
               <p className="text-sm text-gray-500">
@@ -123,8 +139,8 @@ export function SwapDepositInterface({
                     onClick={() => setSlippage(value)}
                     className={`px-3 py-2 rounded-lg text-sm transition-colors ${
                       slippage === value
-                        ? 'bg-rif-primary text-white'
-                        : 'bg-white border border-gray-200 hover:border-gray-300'
+                        ? 'bg-rootstock-orange text-white'
+                        : 'bg-white border border-gray-200 hover:border-rootstock-orange'
                     }`}
                   >
                     {value}%
@@ -180,7 +196,7 @@ export function SwapDepositInterface({
       <div className="space-y-3">
         <div className="flex justify-between text-sm">
           <span className="text-gray-600">Rate</span>
-          <span>1 USDT ≈ 4 tRIF</span>
+          <span>$1 ≈ 20 tRIF</span>
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-gray-600">Slippage Tolerance</span>
@@ -192,7 +208,7 @@ export function SwapDepositInterface({
         </div>
         <div className="flex justify-between text-sm font-medium pt-2 border-t">
           <span>You'll stake</span>
-          <span className="text-rif-primary">{estimatedRIF.toFixed(2)} tRIF</span>
+          <span className="text-rootstock-orange font-bold">{estimatedRIF.toFixed(2)} tRIF</span>
         </div>
       </div>
 

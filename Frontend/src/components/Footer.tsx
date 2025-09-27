@@ -8,8 +8,8 @@ export function Footer() {
           {/* Brand */}
           <div className="space-y-4">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-r from-rootstock-orange to-rif-primary rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold">R</span>
+              <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center bg-white/20 border border-rootstock-orange/30">
+                <img src="/logo_light.jpg" alt="Rootstock Logo" className="w-6 h-6 object-contain" />
               </div>
               <div>
                 <h3 className="text-white font-bold">RIF Staking</h3>
@@ -49,7 +49,7 @@ export function Footer() {
               </li>
               <li>
                 <a 
-                  href="https://testnet.rootstock.io/" 
+                  href="https://explorer.testnet.rootstock.io/" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="hover:text-white transition-colors flex items-center gap-1"

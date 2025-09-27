@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { Plus, Minus, Coins } from 'lucide-react'
-import { SelectedToken } from '../types'
+import type { SelectedToken } from '../types'
 
 interface TokenSelectorProps {
   onTokenSelect: (tokens: SelectedToken[]) => void
   selectedTokens: SelectedToken[]
 }
 
-// Mock token data for Rootstock testnet
+// Available tokens for Rootstock testnet
 const AVAILABLE_TOKENS = [
   {
     address: '0xef213441A85dF4d7ACbDaE0Cf78004e1E486bB96',
@@ -15,31 +15,31 @@ const AVAILABLE_TOKENS = [
     name: 'Rootstock USDT',
     decimals: 18,
     balance: '1,250.50',
-    logoUrl: '/tokens/rusdt.png'
+    logoUrl: '/tether-usdt-logo.svg'
   },
   {
-    address: '0x779Ded0c9e1022225f8E0630b35a9b54bE713736',
-    symbol: 'USDT',
-    name: 'Tether USD',
-    decimals: 6,
-    balance: '892.25',
-    logoUrl: '/tokens/usdt.png'
-  },
-  {
-    address: '0x2AcC95758f8b5F583470ba265EB685a8F45fC9D5',
-    symbol: 'tRIF',
-    name: 'Test RIF Token',
+    address: '0x0000000000000000000000000000000000000000',
+    symbol: 'rBTC',
+    name: 'Rootstock Bitcoin',
     decimals: 18,
-    balance: '15,420.75',
-    logoUrl: '/tokens/rif.png'
+    balance: '2.45',
+    logoUrl: '/bitcoin-btc-logo.svg'
   },
   {
     address: '0x1bda44fda023f2af8280a16fd1b01d1a493ba6c4',
-    symbol: 'DOC',
-    name: 'Dollar on Chain',
+    symbol: 'rUSDC',
+    name: 'Rootstock USD Coin',
+    decimals: 6,
+    balance: '892.25',
+    logoUrl: '/usd-coin-usdc-logo.svg'
+  },
+  {
+    address: '0x2acc95758f8b5f583470ba265eb685a8f45fc9d5',
+    symbol: 'wETH',
+    name: 'Wrapped Ethereum',
     decimals: 18,
-    balance: '500.00',
-    logoUrl: '/tokens/doc.png'
+    balance: '1.25',
+    logoUrl: '/ethereum-eth-logo.svg'
   }
 ]
 
@@ -79,8 +79,10 @@ export function TokenSelector({ onTokenSelect, selectedTokens }: TokenSelectorPr
     // Mock USD calculation - would be real in production
     return selectedTokens.reduce((total, token) => {
       const amount = parseFloat(token.amount || '0')
-      const mockPrice = token.symbol === 'USDT' || token.symbol === 'rUSDT' ? 1 : 
-                       token.symbol === 'tRIF' ? 0.25 : 1
+      const mockPrice = token.symbol === 'rUSDT' ? 1 : 
+                       token.symbol === 'rUSDC' ? 1 : 
+                       token.symbol === 'rBTC' ? 65000 :
+                       token.symbol === 'wETH' ? 3200 : 1
       return total + (amount * mockPrice)
     }, 0)
   }
@@ -112,15 +114,20 @@ export function TokenSelector({ onTokenSelect, selectedTokens }: TokenSelectorPr
                 key={token.address}
                 className={`p-4 border-2 rounded-xl transition-all cursor-pointer ${
                   isSelected 
-                    ? 'border-rif-primary bg-blue-50' 
-                    : 'border-gray-200 hover:border-gray-300'
+                    ? 'border-rootstock-orange bg-orange-50' 
+                    : 'border-gray-200 hover:border-rootstock-orange'
                 }`}
                 onClick={() => !isSelected && handleTokenToggle(token)}
               >
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-r from-rootstock-orange to-rif-primary rounded-full flex items-center justify-center">
-                      <span className="text-white font-bold text-sm">{token.symbol[0]}</span>
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center bg-white border border-gray-200 p-1">
+                      <img 
+                        src={token.logoUrl} 
+                        alt={token.symbol} 
+                        className="w-full h-full object-contain"
+                        loading="eager"
+                      />
                     </div>
                     <div>
                       <p className="font-semibold text-gray-800">{token.symbol}</p>
@@ -135,8 +142,8 @@ export function TokenSelector({ onTokenSelect, selectedTokens }: TokenSelectorPr
                     }}
                     className={`p-2 rounded-full transition-colors ${
                       isSelected 
-                        ? 'bg-red-100 text-red-600 hover:bg-red-200' 
-                        : 'bg-green-100 text-green-600 hover:bg-green-200'
+                        ? 'bg-gray-100 text-gray-600 hover:bg-gray-200' 
+                        : 'bg-rootstock-orange text-white hover:bg-rootstock-orange-dark'
                     }`}
                   >
                     {isSelected ? <Minus className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
@@ -195,7 +202,7 @@ export function TokenSelector({ onTokenSelect, selectedTokens }: TokenSelectorPr
             ))}
             <div className="border-t pt-3 flex justify-between items-center font-semibold">
               <span>Total Value (Est.)</span>
-              <span className="text-rif-primary">${getTotalUSDValue().toFixed(2)}</span>
+              <span className="text-rootstock-orange font-bold">${getTotalUSDValue().toFixed(2)}</span>
             </div>
           </div>
         </div>

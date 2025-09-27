@@ -5,28 +5,28 @@ export const TOKENS = {
     symbol: 'rUSDT',
     name: 'Rootstock USDT',
     decimals: 18,
-    logoUrl: '/tokens/rusdt.png'
+    logoUrl: '/tether-usdt-logo.svg'
   },
-  USDT: {
-    address: '0x779Ded0c9e1022225f8E0630b35a9b54bE713736',
-    symbol: 'USDT',
-    name: 'Tether USD',
-    decimals: 6,
-    logoUrl: '/tokens/usdt.png'
-  },
-  TRIF: {
-    address: '0x2AcC95758f8b5F583470ba265EB685a8F45fC9D5',
-    symbol: 'tRIF',
-    name: 'Test RIF Token',
+  RBTC: {
+    address: '0x0000000000000000000000000000000000000000',
+    symbol: 'rBTC',
+    name: 'Rootstock Bitcoin',
     decimals: 18,
-    logoUrl: '/tokens/rif.png'
+    logoUrl: '/bitcoin-btc-logo.svg'
   },
-  DOC: {
+  RUSDC: {
     address: '0x1bda44fda023f2af8280a16fd1b01d1a493ba6c4',
-    symbol: 'DOC',
-    name: 'Dollar on Chain',
+    symbol: 'rUSDC',
+    name: 'Rootstock USD Coin',
+    decimals: 6,
+    logoUrl: '/usd-coin-usdc-logo.svg'
+  },
+  WETH: {
+    address: '0x2acc95758f8b5f583470ba265eb685a8f45fc9d5',
+    symbol: 'wETH',
+    name: 'Wrapped Ethereum',
     decimals: 18,
-    logoUrl: '/tokens/doc.png'
+    logoUrl: '/ethereum-eth-logo.svg'
   }
 } as const
 
