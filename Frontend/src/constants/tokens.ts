@@ -18,7 +18,7 @@ export const TOKENS = {
     address: '0xCa552b5ac029864D9c0cFae2c760E57B22f6a268',
     symbol: 'rUSDC',
     name: 'Rootstock USD Coin',
-    decimals: 6,
+    decimals: 18,
     logoUrl: '/usd-coin-usdc-logo.svg'
   },
   WETH: {

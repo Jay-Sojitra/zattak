@@ -1,5 +1,7 @@
 import { useState } from 'react'
-import { Plus, Minus, Coins } from 'lucide-react'
+import { Plus, Minus, Coins, Copy, Check } from 'lucide-react'
+import { useAccount, useBalance } from 'wagmi'
+import { formatUnits } from 'viem'
 import type { SelectedToken } from '../types'
 
 interface TokenSelectorProps {
@@ -29,7 +31,7 @@ const AVAILABLE_TOKENS = [
     address: '0xCa552b5ac029864D9c0cFae2c760E57B22f6a268',
     symbol: 'rUSDC',
     name: 'Rootstock USD Coin',
-    decimals: 6,
+    decimals: 18,
     balance: '892.25',
     logoUrl: '/usd-coin-usdc-logo.svg'
   },
@@ -43,8 +45,164 @@ const AVAILABLE_TOKENS = [
   }
 ]
 
+// Custom hook to fetch token balance
+function useTokenBalance(tokenAddress: string, decimals: number) {
+  const { address } = useAccount()
+  
+  // All tokens are ERC20 tokens, including rBTC at the specified contract address
+  const { data: balance, isLoading } = useBalance({
+    address: address,
+    token: tokenAddress as `0x${string}`,
+  })
+
+  const formattedBalance = balance ? formatUnits(balance.value, decimals) : '0'
+  
+  return {
+    balance: formattedBalance,
+    isLoading,
+    raw: balance?.value || 0n
+  }
+}
+
+// Component for individual token with real balance
+function TokenCard({ 
+  token, 
+  isSelected, 
+  selectedToken, 
+  onToggle, 
+  onAmountChange 
+}: {
+  token: typeof AVAILABLE_TOKENS[0]
+  isSelected: boolean
+  selectedToken?: SelectedToken
+  onToggle: () => void
+  onAmountChange: (amount: string) => void
+}) {
+  const { balance, isLoading } = useTokenBalance(token.address, token.decimals)
+  const [copied, setCopied] = useState(false)
+
+  const handleCopyAddress = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    try {
+      await navigator.clipboard.writeText(token.address)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch (err) {
+      console.error('Failed to copy address:', err)
+    }
+  }
+  
+  const displayBalance = isLoading ? (
+    <div className="flex items-center gap-2">
+      <div className="w-4 h-4 border-2 border-gray-300 border-t-rootstock-orange rounded-full animate-spin"></div>
+      <span className="text-gray-400">Loading...</span>
+    </div>
+  ) : parseFloat(balance).toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 6
+  })
+
+  const maxAmount = isLoading ? '0' : balance
+
+  return (
+    <div
+      className={`p-4 border-2 rounded-xl transition-all cursor-pointer ${
+        isSelected 
+          ? 'border-rootstock-orange bg-orange-50' 
+          : 'border-gray-200 hover:border-rootstock-orange'
+      }`}
+      onClick={() => !isSelected && onToggle()}
+    >
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full flex items-center justify-center bg-white border border-gray-200 p-1">
+            <img 
+              src={token.logoUrl} 
+              alt={token.symbol} 
+              className="w-full h-full object-contain"
+              loading="eager"
+            />
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <p className="font-semibold text-gray-800">{token.symbol}</p>
+              <button
+                onClick={handleCopyAddress}
+                className="p-1 hover:bg-gray-100 rounded transition-colors group"
+                title="Copy token address"
+              >
+                {copied ? (
+                  <Check className="w-3 h-3 text-green-600" />
+                ) : (
+                  <Copy className="w-3 h-3 text-gray-400 group-hover:text-gray-600" />
+                )}
+              </button>
+            </div>
+            <p className="text-sm text-gray-500">{token.name}</p>
+          </div>
+        </div>
+        
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            onToggle()
+          }}
+          className={`p-2 rounded-full transition-colors ${
+            isSelected 
+              ? 'bg-gray-100 text-gray-600 hover:bg-gray-200' 
+              : 'bg-rootstock-orange text-white hover:bg-rootstock-orange-dark'
+          }`}
+        >
+          {isSelected ? <Minus className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+        </button>
+      </div>
+      
+      <div className="text-right">
+        <p className="text-sm text-gray-500">Balance</p>
+        <div className="font-semibold">
+          {isLoading ? (
+            displayBalance
+          ) : (
+            <span>{displayBalance} {token.symbol}</span>
+          )}
+        </div>
+      </div>
+
+      {/* Amount Input for Selected Tokens */}
+      {isSelected && (
+        <div className="mt-4 pt-4 border-t border-gray-200">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Amount to swap
+          </label>
+          <div className="flex gap-2">
+            <input
+              type="number"
+              placeholder="0.00"
+              value={selectedToken?.amount || ''}
+              onChange={(e) => onAmountChange(e.target.value)}
+              className="input-field text-lg"
+              step="0.01"
+              min="0"
+              max={maxAmount}
+              disabled={isLoading}
+            />
+            <button
+              onClick={() => onAmountChange(maxAmount)}
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+              disabled={isLoading}
+            >
+              MAX
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function TokenSelector({ onTokenSelect, selectedTokens }: TokenSelectorProps) {
   const [searchTerm, setSearchTerm] = useState('')
+  const { address } = useAccount()
 
   const filteredTokens = AVAILABLE_TOKENS.filter(token =>
     token.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -59,10 +217,11 @@ export function TokenSelector({ onTokenSelect, selectedTokens }: TokenSelectorPr
       const updated = selectedTokens.filter(t => t.address !== token.address)
       onTokenSelect(updated)
     } else {
-      // Add token
+      // Add token with placeholder balance (will be updated by real balance)
       const newToken: SelectedToken = {
         ...token,
-        amount: ''
+        amount: '',
+        balance: '0' // This will be overridden by real balance display
       }
       onTokenSelect([...selectedTokens, newToken])
     }
@@ -101,91 +260,34 @@ export function TokenSelector({ onTokenSelect, selectedTokens }: TokenSelectorPr
         <Coins className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
       </div>
 
-      {/* Available Tokens */}
-      <div className="grid gap-4">
-        <h3 className="font-semibold text-gray-700">Available Tokens</h3>
-        <div className="grid sm:grid-cols-2 gap-4">
-          {filteredTokens.map((token) => {
-            const isSelected = selectedTokens.some(t => t.address === token.address)
-            const selectedToken = selectedTokens.find(t => t.address === token.address)
-            
-            return (
-              <div
-                key={token.address}
-                className={`p-4 border-2 rounded-xl transition-all cursor-pointer ${
-                  isSelected 
-                    ? 'border-rootstock-orange bg-orange-50' 
-                    : 'border-gray-200 hover:border-rootstock-orange'
-                }`}
-                onClick={() => !isSelected && handleTokenToggle(token)}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center bg-white border border-gray-200 p-1">
-                      <img 
-                        src={token.logoUrl} 
-                        alt={token.symbol} 
-                        className="w-full h-full object-contain"
-                        loading="eager"
-                      />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-gray-800">{token.symbol}</p>
-                      <p className="text-sm text-gray-500">{token.name}</p>
-                    </div>
-                  </div>
-                  
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleTokenToggle(token)
-                    }}
-                    className={`p-2 rounded-full transition-colors ${
-                      isSelected 
-                        ? 'bg-gray-100 text-gray-600 hover:bg-gray-200' 
-                        : 'bg-rootstock-orange text-white hover:bg-rootstock-orange-dark'
-                    }`}
-                  >
-                    {isSelected ? <Minus className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-                  </button>
-                </div>
-                
-                <div className="text-right">
-                  <p className="text-sm text-gray-500">Balance</p>
-                  <p className="font-semibold">{token.balance} {token.symbol}</p>
-                </div>
-
-                {/* Amount Input for Selected Tokens */}
-                {isSelected && (
-                  <div className="mt-4 pt-4 border-t border-gray-200">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Amount to swap
-                    </label>
-                    <div className="flex gap-2">
-                      <input
-                        type="number"
-                        placeholder="0.00"
-                        value={selectedToken?.amount || ''}
-                        onChange={(e) => handleAmountChange(token.address, e.target.value)}
-                        className="input-field text-lg"
-                        step="0.01"
-                        min="0"
-                        max={parseFloat(token.balance.replace(/,/g, ''))}
-                      />
-                      <button
-                        onClick={() => handleAmountChange(token.address, token.balance.replace(/,/g, ''))}
-                        className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium transition-colors"
-                      >
-                        MAX
-                      </button>
-                    </div>
-                  </div>
-                )}
+          {/* Available Tokens */}
+          <div className="grid gap-4">
+            <h3 className="font-semibold text-gray-700">Available Tokens</h3>
+            {!address && (
+              <div className="text-center py-8 text-gray-500">
+                <p>Connect your wallet to see token balances</p>
               </div>
-            )
-          })}
-        </div>
-      </div>
+            )}
+            {address && (
+              <div className="grid sm:grid-cols-2 gap-4">
+                {filteredTokens.map((token) => {
+                  const isSelected = selectedTokens.some(t => t.address === token.address)
+                  const selectedToken = selectedTokens.find(t => t.address === token.address)
+                  
+                  return (
+                    <TokenCard
+                      key={token.address}
+                      token={token}
+                      isSelected={isSelected}
+                      selectedToken={selectedToken}
+                      onToggle={() => handleTokenToggle(token)}
+                      onAmountChange={(amount) => handleAmountChange(token.address, amount)}
+                    />
+                  )
+                })}
+              </div>
+            )}
+          </div>
 
       {/* Selected Tokens Summary */}
       {selectedTokens.length > 0 && (

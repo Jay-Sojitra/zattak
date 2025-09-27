@@ -50,10 +50,12 @@ function App() {
     setSelectedTokens(tokens)
   }
 
-  const handleCloseModal = () => {
-    setShowSuccessModal(false)
-    reset() // Reset wagmi state
-  }
+      const handleCloseModal = () => {
+        setShowSuccessModal(false)
+        setSelectedTokens([]) // Clear selected tokens
+        setTransactionError(null) // Clear any errors
+        reset() // Reset wagmi state
+      }
 
   const handleClearError = () => {
     setTransactionError(null)
@@ -160,12 +162,12 @@ function App() {
                 onTokenSelect={handleTokenSelect}
                 selectedTokens={selectedTokens}
               />
-            </div>
+      </div>
           )}
 
           {/* Swap and Deposit Interface */}
           {isConnected && selectedTokens.length > 0 && (
-            <div className="card">
+      <div className="card">
               <SwapDepositInterface 
                 selectedTokens={selectedTokens}
                 onSwapAndDeposit={handleSwapAndDeposit}
@@ -179,40 +181,40 @@ function App() {
           )}
         </div>
 
-        {/* Feature Highlights */}
-        <div className="max-w-6xl mx-auto mt-16">
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="card-gradient text-center">
-              <div className="w-16 h-16 bg-rootstock-orange rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl">🔄</span>
+            {/* Feature Highlights */}
+            <div className="max-w-6xl mx-auto mt-16">
+              <div className="grid md:grid-cols-3 gap-8">
+                <div className="card-gradient text-center">
+                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span className="text-2xl">🔄</span>
+                  </div>
+                  <h3 className="text-xl font-semibold mb-2">Multi-Token Swap</h3>
+                  <p className="text-gray-600">
+                    Support for multiple tokens in a single transaction. Swap USDT, rUSDT, and more to tRIF.
+                  </p>
+                </div>
+                
+                <div className="card-gradient text-center">
+                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span className="text-2xl">⚡</span>
+                  </div>
+                  <h3 className="text-xl font-semibold mb-2">One-Click Staking</h3>
+                  <p className="text-gray-600">
+                    Automatically stake your swapped tRIF tokens in the RIF staking contract with optimal gas efficiency.
+                  </p>
+                </div>
+                
+                <div className="card-gradient text-center">
+                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span className="text-2xl">🏆</span>
+                  </div>
+                  <h3 className="text-xl font-semibold mb-2">Maximize Returns</h3>
+                  <p className="text-gray-600">
+                    Earn staking rewards while participating in the Rootstock ecosystem. Secure and transparent.
+                  </p>
+                </div>
               </div>
-              <h3 className="text-xl font-semibold mb-2">Multi-Token Swap</h3>
-              <p className="text-gray-600">
-                Support for multiple tokens in a single transaction. Swap USDT, rUSDT, and more to tRIF.
-              </p>
             </div>
-            
-            <div className="card-gradient text-center">
-              <div className="w-16 h-16 bg-rootstock-orange rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl">⚡</span>
-              </div>
-              <h3 className="text-xl font-semibold mb-2">One-Click Staking</h3>
-              <p className="text-gray-600">
-                Automatically stake your swapped tRIF tokens in the RIF staking contract with optimal gas efficiency.
-              </p>
-            </div>
-            
-            <div className="card-gradient text-center">
-              <div className="w-16 h-16 bg-rootstock-orange rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl">🏆</span>
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Maximize Returns</h3>
-              <p className="text-gray-600">
-                Earn staking rewards while participating in the Rootstock ecosystem. Secure and transparent.
-              </p>
-            </div>
-          </div>
-        </div>
       </main>
 
       <Footer />
@@ -229,7 +231,7 @@ function App() {
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
-            </button>
+        </button>
 
             {/* Success content */}
             <div className="text-center">
@@ -252,8 +254,8 @@ function App() {
                 <p className="text-sm text-gray-500 mb-2">Transaction Hash:</p>
                 <p className="font-mono text-xs text-gray-700 break-all">
                   {hash}
-                </p>
-              </div>
+        </p>
+      </div>
 
               {/* Action buttons */}
               <div className="flex flex-col sm:flex-row gap-3">
