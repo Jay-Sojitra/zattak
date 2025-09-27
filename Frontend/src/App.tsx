@@ -1,35 +1,112 @@
-import { useState } from 'react'
-import { useAccount } from 'wagmi'
+import React, { useState } from 'react'
+import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
+import { parseUnits } from 'viem'
 import { WalletConnect } from './components/WalletConnect'
 import { TokenSelector } from './components/TokenSelector'
 import { SwapDepositInterface } from './components/SwapDepositInterface'
 import { Header } from './components/Header'
 import { Footer } from './components/Footer'
 import { StatsSection } from './components/StatsSection'
+import { CONTRACTS } from './constants/tokens'
+import RIFBatchDepositerABI from './contracts/RIFBatchDepositer.json'
 import type { SelectedToken } from './types'
 
 function App() {
   const { isConnected } = useAccount()
   const [selectedTokens, setSelectedTokens] = useState<SelectedToken[]>([])
-  const [isLoading, setIsLoading] = useState(false)
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [transactionError, setTransactionError] = useState<string | null>(null)
+  
+  const { writeContract, data: hash, error, isPending, reset } = useWriteContract()
+  
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
+    hash,
+  })
+
+  // Handle transaction confirmation
+  React.useEffect(() => {
+    if (isConfirmed && hash) {
+      setShowSuccessModal(true)
+      setTransactionError(null)
+    }
+  }, [isConfirmed, hash])
+
+  // Handle errors
+  React.useEffect(() => {
+    if (error) {
+      if (error.message.includes('User rejected')) {
+        setTransactionError('Transaction was rejected by user')
+      } else if (error.message.includes('insufficient funds')) {
+        setTransactionError('Insufficient funds for transaction')
+      } else if (error.message.includes('gas')) {
+        setTransactionError('Gas estimation failed. Please try again.')
+      } else {
+        setTransactionError(error.message)
+      }
+    }
+  }, [error])
 
   const handleTokenSelect = (tokens: SelectedToken[]) => {
     setSelectedTokens(tokens)
   }
 
+  const handleCloseModal = () => {
+    setShowSuccessModal(false)
+    reset() // Reset wagmi state
+  }
+
+  const handleClearError = () => {
+    setTransactionError(null)
+    reset() // Reset wagmi state
+  }
+
   const handleSwapAndDeposit = async () => {
-    setIsLoading(true)
-    // This will be implemented when we integrate the contract
+    if (!selectedTokens.length) return
+
     try {
-      console.log('Swapping and depositing tokens:', selectedTokens)
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 3000))
-      alert('Swap and Deposit successful! (Demo)')
+      // Prepare contract call parameters
+      const tokenAddresses: `0x${string}`[] = []
+      const tokenAmounts: bigint[] = []
+      let totalRIFAmount = 0n
+
+      // Convert token amounts to wei and calculate total RIF expected
+      selectedTokens.forEach(token => {
+        if (token.amount && parseFloat(token.amount) > 0) {
+          tokenAddresses.push(token.address as `0x${string}`)
+          
+          // Convert amount to wei based on token decimals
+          const amountInWei = parseUnits(token.amount, token.decimals)
+          tokenAmounts.push(amountInWei)
+
+          // Calculate expected RIF amount for this token
+          const rifRate = token.symbol === 'rUSDT' ? 17.1143 : 
+                         token.symbol === 'rUSDC' ? 17.1143 : 
+                         token.symbol === 'rBTC' ? 1882594 :
+                         token.symbol === 'wETH' ? 56000 : 17.1143
+
+          const rifAmount = parseFloat(token.amount) * rifRate
+          totalRIFAmount += parseUnits(rifAmount.toString(), 18) // RIF has 18 decimals
+        }
+      })
+
+      console.log('Contract call parameters:', {
+        contract: CONTRACTS.RIF_BATCH_DEPOSITER,
+        tokens: tokenAddresses,
+        amounts: tokenAmounts,
+        rifAmount: totalRIFAmount.toString()
+      })
+
+      // Call the contract function
+      writeContract({
+        address: CONTRACTS.RIF_BATCH_DEPOSITER as `0x${string}`,
+        abi: RIFBatchDepositerABI.abi,
+        functionName: 'executeCallsAndDeposit',
+        args: [tokenAddresses, tokenAmounts, totalRIFAmount],
+      })
+
     } catch (error) {
-      console.error('Error:', error)
-      alert('Transaction failed!')
-    } finally {
-      setIsLoading(false)
+      console.error('Error preparing transaction:', error)
+      alert('Failed to prepare transaction!')
     }
   }
 
@@ -92,7 +169,11 @@ function App() {
               <SwapDepositInterface 
                 selectedTokens={selectedTokens}
                 onSwapAndDeposit={handleSwapAndDeposit}
-                isLoading={isLoading}
+                isLoading={isPending || isConfirming}
+                hash={hash}
+                isConfirmed={isConfirmed}
+                error={transactionError}
+                onClearError={handleClearError}
               />
             </div>
           )}
@@ -135,14 +216,72 @@ function App() {
       </main>
 
       <Footer />
+
+      {/* Success Modal */}
+      {showSuccessModal && hash && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 relative">
+            {/* Close button */}
+            <button
+              onClick={handleCloseModal}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Success content */}
+            <div className="text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              
+              <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                Transaction Successful! 🎉
+              </h3>
+              
+              <p className="text-gray-600 mb-6">
+                Your tokens have been swapped and staked successfully!
+              </p>
+
+              {/* Transaction hash */}
+              <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                <p className="text-sm text-gray-500 mb-2">Transaction Hash:</p>
+                <p className="font-mono text-xs text-gray-700 break-all">
+                  {hash}
+                </p>
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                <a
+                  href={`https://explorer.testnet.rootstock.io/tx/${hash}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 btn-primary text-center py-3 px-4 text-sm flex items-center justify-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                  View on Explorer
+                </a>
+                
+                <button
+                  onClick={handleCloseModal}
+                  className="flex-1 btn-secondary py-3 px-4 text-sm"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
 
 export default App
-
-
-//0x9c3Ea773d4DFB6CbC4a3d88078643020285fd37C => rUSDT
-//0xDF2c8f7852B3BAA4B728f8EAEfB75CCb3A76d363 => rBTC
-//0xCa552b5ac029864D9c0cFae2c760E57B22f6a268 => rUSDC
-//0x917532db0765F594c766E81ae12fA54Bf7E477E4 => wETH

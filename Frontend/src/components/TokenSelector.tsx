@@ -10,7 +10,7 @@ interface TokenSelectorProps {
 // Available tokens for Rootstock testnet
 const AVAILABLE_TOKENS = [
   {
-    address: '0xef213441A85dF4d7ACbDaE0Cf78004e1E486bB96',
+    address: '0x9c3Ea773d4DFB6CbC4a3d88078643020285fd37C',
     symbol: 'rUSDT',
     name: 'Rootstock USDT',
     decimals: 18,
@@ -18,7 +18,7 @@ const AVAILABLE_TOKENS = [
     logoUrl: '/tether-usdt-logo.svg'
   },
   {
-    address: '0x0000000000000000000000000000000000000000',
+    address: '0xDF2c8f7852B3BAA4B728f8EAEfB75CCb3A76d363',
     symbol: 'rBTC',
     name: 'Rootstock Bitcoin',
     decimals: 18,
@@ -26,7 +26,7 @@ const AVAILABLE_TOKENS = [
     logoUrl: '/bitcoin-btc-logo.svg'
   },
   {
-    address: '0x1bda44fda023f2af8280a16fd1b01d1a493ba6c4',
+    address: '0xCa552b5ac029864D9c0cFae2c760E57B22f6a268',
     symbol: 'rUSDC',
     name: 'Rootstock USD Coin',
     decimals: 6,
@@ -34,7 +34,7 @@ const AVAILABLE_TOKENS = [
     logoUrl: '/usd-coin-usdc-logo.svg'
   },
   {
-    address: '0x2acc95758f8b5f583470ba265eb685a8f45fc9d5',
+    address: '0x917532db0765F594c766E81ae12fA54Bf7E477E4',
     symbol: 'wETH',
     name: 'Wrapped Ethereum',
     decimals: 18,

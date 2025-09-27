@@ -4,14 +4,22 @@ import type { SelectedToken } from '../types'
 
 interface SwapDepositInterfaceProps {
   selectedTokens: SelectedToken[]
-  onSwapAndDeposit: () => Promise<void>
+  onSwapAndDeposit: () => void
   isLoading: boolean
+  hash?: `0x${string}`
+  isConfirmed?: boolean
+  error?: string | null
+  onClearError?: () => void
 }
 
 export function SwapDepositInterface({ 
   selectedTokens, 
   onSwapAndDeposit, 
-  isLoading 
+  isLoading,
+  hash,
+  isConfirmed,
+  error,
+  onClearError
 }: SwapDepositInterfaceProps) {
   const [slippage, setSlippage] = useState('0.5')
   const [showAdvanced, setShowAdvanced] = useState(false)
@@ -219,6 +227,40 @@ export function SwapDepositInterface({
         </div>
       </div>
 
+      {/* Transaction Status */}
+      {error && (
+        <div className="flex items-center justify-between p-4 bg-red-50 border border-red-200 rounded-xl">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-red-600" />
+            <div>
+              <p className="text-sm font-medium text-red-700">Transaction Failed</p>
+              <p className="text-xs text-red-600">{error}</p>
+            </div>
+          </div>
+          {onClearError && (
+            <button
+              onClick={onClearError}
+              className="text-red-600 hover:text-red-800 transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
+      )}
+
+      {hash && !isConfirmed && (
+        <div className="flex items-center gap-2 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+          <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          <div className="text-sm text-blue-700">
+            <p>Transaction submitted!</p>
+            <p className="font-mono">Hash: {hash.slice(0, 10)}...{hash.slice(-8)}</p>
+          </div>
+        </div>
+      )}
+
+
       {/* Warning */}
       {!hasValidAmounts && (
         <div className="flex items-center gap-2 p-4 bg-amber-50 border border-amber-200 rounded-xl">
@@ -238,7 +280,12 @@ export function SwapDepositInterface({
         {isLoading ? (
           <>
             <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-            Processing Transaction...
+            {hash ? 'Confirming Transaction...' : 'Preparing Transaction...'}
+          </>
+        ) : isConfirmed ? (
+          <>
+            <span className="text-lg">✓</span>
+            Transaction Confirmed!
           </>
         ) : (
           <>
