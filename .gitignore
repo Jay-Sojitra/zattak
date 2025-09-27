@@ -20,6 +20,9 @@ out/
 broadcast/
 .cache/
 
+# Foundry dependencies (uncomment next line for new projects)
+lib/
+
 # IDE and Editor files
 .vscode/
 .idea/
