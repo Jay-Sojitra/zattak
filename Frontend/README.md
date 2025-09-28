@@ -1,154 +1,204 @@
-# RIF Staking Platform Frontend
+# RIF Staking Platform
 
-A modern React frontend for the RIF staking platform on Rootstock testnet. This application allows users to swap multiple tokens to tRIF and stake them in a single transaction.
+A revolutionary DeFi platform that combines token swapping and staking in one seamless transaction, eliminating the need for multiple approvals and reducing users work.
 
-## Features
+## 🎯 Problem
 
-- 🔄 **Multi-Token Swap**: Support for swapping multiple tokens (USDT, rUSDT, DOC) to tRIF
-- ⚡ **One-Click Staking**: Automatically stake swapped tRIF tokens
-- 🎨 **Modern UI**: Beautiful, responsive design with Rootstock branding
-- 📱 **Mobile Responsive**: Optimized for all device sizes
-- 🔗 **Wallet Integration**: Ready for wallet connection (MetaMask, WalletConnect, etc.)
-- 🌈 **Rich Animations**: Smooth transitions and hover effects
-- 📊 **Real-time Stats**: Display TVL, APY, and other metrics
+Current DeFi platforms force users to:
+- Swap tokens on one platform (e.g., Uniswap)
+- Stake on another platform
+- Pay multiple gas fees for each transaction
+- Sign multiple approval transactions
+- Wait for each step to complete
 
-## Tech Stack
+This fragmented experience is expensive, time-consuming, and frustrating for users.
 
-- **Framework**: React 18 + TypeScript
-- **Build Tool**: Vite
+## 💡 Solution
+
+RIF Staking Platform solves this by:
+- **One-Click Staking**: Swap any token to RIF and stake in a single transaction
+- **Smart Approvals**: Intelligently checks existing allowances to avoid unnecessary approval popups
+- **Batch Transactions**: Uses EIP-5792 to batch multiple operations into one signature
+- **Atomic Safety**: All operations succeed or fail together, preventing partial failures
+
+## 🚀 Features
+
+- **Multi-Token Support**: Stake rUSDT, rBTC, rUSDC, wETH, and more
+- **Real-Time Balances**: Live token balance display with copy-to-clipboard addresses
+- **Smart Allowance Checking**: Only requests approvals when actually needed
+- **Beautiful UI/UX**: Modern, intuitive interface built with React and Tailwind CSS
+- **Transaction Tracking**: Real-time status updates and explorer links
+- **Error Handling**: Graceful error handling with user-friendly messages
+
+## 🛠️ Tech Stack
+
+- **Frontend**: React 18 + TypeScript + Vite
 - **Styling**: Tailwind CSS
-- **Icons**: Lucide React
-- **Wallet Connection**: RainbowKit + Wagmi + Viem (configured but not yet integrated)
+- **Web3**: Wagmi + RainbowKit + Viem
+- **Blockchain**: Rootstock Testnet + Base Sepolia
+- **Batch Transactions**: EIP-5792 implementation
 
-## Getting Started
+## 📦 Installation
 
 ### Prerequisites
 
-- Node.js 18+ and npm
+- Node.js 18+ 
+- npm or yarn
+- MetaMask or compatible wallet
 
-### Installation
+### Setup Steps
 
-1. Navigate to the Frontend directory:
+1. **Clone the repository**
    ```bash
+   git clone <repository-url>
    cd Frontend
    ```
 
-2. Install dependencies:
+2. **Install dependencies**
    ```bash
    npm install
    ```
 
-3. Start the development server:
+3. **Configure environment variables**
+   
+   Create a `.env` file in the root directory with the following variables:
+   ```
+   VITE_WALLETCONNECT_PROJECT_ID=your_project_id_here
+   VITE_RIF_BATCH_DEPOSITER=0xe38c8986823305bD73C2A33C60b4ba6D26024e19
+   ```
+   
+   **Note**: Get your WalletConnect Project ID from [WalletConnect Cloud](https://cloud.walletconnect.com/)
+
+4. **Start the development server**
    ```bash
    npm run dev
    ```
 
-4. Open your browser and visit: `http://localhost:5173`
+5. **Open your browser**
+   Navigate to `http://localhost:5173`
 
-## Project Structure
+## 🎮 Usage
+
+### Getting Started
+
+1. **Connect Wallet**
+   - Click "Connect Wallet" in the top right
+   - Select your preferred wallet (MetaMask, Rainbow, etc.)
+   - Switch to Rootstock Testnet or Base Sepolia
+
+2. **Select Tokens**
+   - Choose tokens you want to stake from the available list
+   - Enter amounts for each selected token
+   - View real-time balance and estimated RIF output
+
+3. **Execute Transaction**
+   - Click "Swap & Stake" button
+   - Approve tokens if needed (only when necessary)
+   - Confirm the batch transaction
+   - Wait for confirmation and view on explorer
+
+### Supported Networks
+
+- **Rootstock Testnet** (Chain ID: 31)
+- **Base Sepolia** (Chain ID: 84532)
+
+### Supported Tokens
+
+- rUSDT (Rootstock USDT)
+- rBTC (Rootstock Bitcoin) 
+- rUSDC (Rootstock USD Coin)
+- wETH (Wrapped Ethereum)
+- Root Token
+- Stock Token
+
+## 🔧 Development
+
+### Available Scripts
+
+```bash
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+
+# Run type checking
+npm run type-check
+
+# Run linting
+npm run lint
+```
+
+### Project Structure
 
 ```
-Frontend/
-├── public/               # Static assets
-├── src/
-│   ├── components/       # React components
-│   │   ├── Header.tsx
-│   │   ├── Footer.tsx
-│   │   ├── WalletConnect.tsx
-│   │   ├── TokenSelector.tsx
-│   │   ├── SwapDepositInterface.tsx
-│   │   └── StatsSection.tsx
-│   ├── constants/        # Constants and configuration
-│   │   └── tokens.ts
-│   ├── utils/           # Utility functions
-│   │   └── cn.ts
-│   ├── App.tsx          # Main app component
-│   ├── main.tsx         # App entry point
-│   └── index.css        # Global styles
-├── tailwind.config.js   # Tailwind configuration
-└── package.json
+src/
+├── components/          # React components
+│   ├── Header.tsx      # Navigation header
+│   ├── TokenSelector.tsx # Token selection interface
+│   ├── SwapDepositInterface.tsx # Main transaction interface
+│   └── ...
+├── hooks/              # Custom React hooks
+│   └── useBatchTransaction.ts # Batch transaction logic
+├── constants/          # Configuration constants
+├── contracts/          # Smart contract ABIs
+├── types/              # TypeScript type definitions
+└── utils/              # Utility functions
 ```
 
-## Key Components
+## 🧪 Testing
 
-### WalletConnect
-- Handles wallet connection UI
-- Shows connection status and address
-- Ready for integration with actual wallet providers
+### Manual Testing
 
-### TokenSelector
-- Multi-token selection interface
-- Shows token balances and USD values
-- Input validation and amount entry
-- Real-time calculation of total value
+1. **Test Token Selection**
+   - Select multiple tokens
+   - Enter different amounts
+   - Verify balance calculations
 
-### SwapDepositInterface
-- Transaction summary and preview
-- Advanced settings (slippage, gas estimation)
-- Staking benefits display
-- One-click swap and stake button
+2. **Test Approval Flow**
+   - First time: Should request approvals
+   - Second time: Should skip if sufficient allowance
 
-### StatsSection
-- Displays platform statistics
-- TVL, active stakers, APY, total swaps
-- Real-time updates (mock data for now)
+3. **Test Transaction Flow**
+   - Rootstock: Multiple popups for approvals + main tx
+   - Base Sepolia: Single popup for batch transaction
 
-## Design System
+### Test Scenarios
 
-### Colors
-- **Rootstock Orange**: `#FF6B35`
-- **RIF Blue**: `#00D4FF`
-- **Dark Gray**: `#1A1A1A`
-- **Light Gray**: `#F5F5F5`
+- **Fresh Wallet**: No previous approvals
+- **Partial Approvals**: Some tokens approved, others not
+- **Full Approvals**: All tokens already approved
+- **Insufficient Balance**: Not enough tokens
+- **Network Errors**: Wrong network, RPC issues
 
-### Components
-- **btn-primary**: Gradient primary button
-- **btn-secondary**: Secondary outline button
-- **card**: Standard card component
-- **card-gradient**: Gradient background card
-- **input-field**: Standard input styling
 
-## Environment Configuration
+## 🤝 Contributing
 
-The app is currently configured for Rootstock Testnet:
-- **Chain ID**: 31
-- **RPC URL**: `https://public-node.testnet.rsk.co`
-- **Explorer**: `https://explorer.testnet.rsk.co`
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-## Mock Data
+## 📄 License
 
-Currently, the app uses mock data for:
-- Token balances
-- Wallet addresses
-- Transaction estimates
-- Platform statistics
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-This will be replaced with real data when contract integration is complete.
+## 🆘 Support
 
-## Next Steps
+- **Documentation**: Check this README and inline code comments
+- **Issues**: Open an issue on GitHub for bugs or feature requests
+- **Discord**: Join our community for discussions and support
 
-1. **Contract Integration**: Connect to deployed RIFDepositContract
-2. **Wallet Integration**: Implement actual wallet connection
-3. **Real Data**: Replace mock data with blockchain data
-4. **Transaction Handling**: Implement real transaction flow
-5. **Error Handling**: Add comprehensive error handling
-6. **Testing**: Add unit and integration tests
+## 🔗 Links
 
-## Available Scripts
+- **Live Demo**: [Add your deployed URL here]
+- **Smart Contract**: [Add contract address/explorer link]
+- **Documentation**: [Add docs link if available]
 
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run lint` - Run ESLint
+---
 
-## Contributing
-
-1. Follow the existing code style
-2. Add TypeScript types for all new components
-3. Use Tailwind CSS classes for styling
-4. Ensure mobile responsiveness
-5. Test all user interactions
-
-## License
-
-Built for Rootstock ecosystem. See main project license.
+**Built with ❤️ for the DeFi community**
