@@ -10,6 +10,12 @@ interface SwapDepositInterfaceProps {
   isConfirmed?: boolean
   error?: string | null
   onClearError?: () => void
+  needsApprovals?: boolean
+  batchId?: string | null
+  approvalStep?: number
+  totalApprovals?: number
+  isEIP5792?: boolean
+  chainId?: number
 }
 
 export function SwapDepositInterface({ 
@@ -19,7 +25,13 @@ export function SwapDepositInterface({
   hash,
   isConfirmed,
   error,
-  onClearError
+  onClearError,
+  needsApprovals,
+  batchId,
+  approvalStep = 0,
+  totalApprovals = 0,
+  isEIP5792 = false,
+  chainId = 31
 }: SwapDepositInterfaceProps) {
   const [slippage, setSlippage] = useState('0.5')
   const [showAdvanced, setShowAdvanced] = useState(false)
@@ -227,38 +239,87 @@ export function SwapDepositInterface({
         </div>
       </div>
 
-      {/* Transaction Status */}
-      {error && (
-        <div className="flex items-center justify-between p-4 bg-red-50 border border-red-200 rounded-xl">
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5 text-red-600" />
-            <div>
-              <p className="text-sm font-medium text-red-700">Transaction Failed</p>
-              <p className="text-xs text-red-600">{error}</p>
+          {/* Chain-specific Transaction Info */}
+          <div className="p-4 rounded-xl border bg-blue-50 border-blue-200">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+              <p className="text-sm font-medium text-blue-700">
+                {chainId === 84532 ? '🚀 Base Sepolia - EIP-5792 Batch' : '⚡ Rootstock Testnet - Traditional'}
+              </p>
             </div>
+            <p className="text-xs mt-1 text-blue-600">
+              {chainId === 84532 
+                ? 'Checking allowances... Only needed approvals will be batched'
+                : needsApprovals 
+                  ? `${totalApprovals} approval transaction(s) needed + 1 main transaction`
+                  : 'Checking allowances... May skip approvals if sufficient'
+              }
+            </p>
           </div>
-          {onClearError && (
-            <button
-              onClick={onClearError}
-              className="text-red-600 hover:text-red-800 transition-colors"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          )}
-        </div>
-      )}
 
-      {hash && !isConfirmed && (
-        <div className="flex items-center gap-2 p-4 bg-blue-50 border border-blue-200 rounded-xl">
-          <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-          <div className="text-sm text-blue-700">
-            <p>Transaction submitted!</p>
-            <p className="font-mono">Hash: {hash.slice(0, 10)}...{hash.slice(-8)}</p>
-          </div>
-        </div>
-      )}
+          {/* Approval Progress for Rootstock */}
+          {!isEIP5792 && needsApprovals && approvalStep > 0 && (
+            <div className="p-4 rounded-xl border bg-yellow-50 border-yellow-200">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-medium text-yellow-700">
+                  Approval Progress
+                </p>
+                <span className="text-xs text-yellow-600">
+                  {approvalStep}/{totalApprovals + 1}
+                </span>
+              </div>
+              <div className="w-full bg-yellow-200 rounded-full h-2">
+                <div 
+                  className="bg-yellow-500 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${(approvalStep / (totalApprovals + 1)) * 100}%` }}
+                ></div>
+              </div>
+              <p className="text-xs mt-2 text-yellow-600">
+                {approvalStep <= totalApprovals 
+                  ? `Approving token ${approvalStep}/${totalApprovals}...`
+                  : 'Executing main transaction...'
+                }
+              </p>
+            </div>
+          )}
+
+          {/* Transaction Status */}
+          {error && (
+            <div className="flex items-center justify-between p-4 bg-red-50 border border-red-200 rounded-xl">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-red-600" />
+                <div>
+                  <p className="text-sm font-medium text-red-700">Transaction Failed</p>
+                  <p className="text-xs text-red-600">{error}</p>
+                </div>
+              </div>
+              {onClearError && (
+                <button
+                  onClick={onClearError}
+                  className="text-red-600 hover:text-red-800 transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          )}
+
+          {(hash || batchId) && !isConfirmed && (
+            <div className="flex items-center gap-2 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+              <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              <div className="text-sm text-blue-700">
+                <p>{batchId ? 'Batch transaction submitted!' : 'Transaction submitted!'}</p>
+                {hash && (
+                  <p className="font-mono">Hash: {hash.slice(0, 10)}...{hash.slice(-8)}</p>
+                )}
+                {batchId && (
+                  <p className="font-mono">Batch ID: {batchId.slice(0, 10)}...{batchId.slice(-8)}</p>
+                )}
+              </div>
+            </div>
+          )}
 
 
       {/* Warning */}
@@ -271,39 +332,52 @@ export function SwapDepositInterface({
         </div>
       )}
 
-      {/* Action Button */}
-      <button
-        onClick={onSwapAndDeposit}
-        disabled={!hasValidAmounts || isLoading}
-        className="w-full btn-primary text-xl py-4 flex items-center justify-center gap-3"
-      >
-        {isLoading ? (
-          <>
-            <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-            {hash ? 'Confirming Transaction...' : 'Preparing Transaction...'}
-          </>
-        ) : isConfirmed ? (
-          <>
-            <span className="text-lg">✓</span>
-            Transaction Confirmed!
-          </>
-        ) : (
-          <>
-            <Zap className="w-6 h-6" />
-            Swap & Stake {estimatedRIF.toFixed(2)} tRIF
-          </>
-        )}
-      </button>
+          {/* Action Button */}
+          <button
+            onClick={onSwapAndDeposit}
+            disabled={!hasValidAmounts || isLoading}
+            className="w-full btn-primary text-xl py-4 flex items-center justify-center gap-3"
+          >
+            {isLoading ? (
+              <>
+                <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                {batchId ? 'Confirming Batch Transaction...' : 'Preparing Batch Transaction...'}
+              </>
+            ) : isConfirmed ? (
+              <>
+                <span className="text-lg">✓</span>
+                {batchId ? 'Batch Transaction Confirmed!' : 'Transaction Confirmed!'}
+              </>
+            ) : (
+              <>
+                <Zap className="w-6 h-6" />
+                {chainId === 84532
+                  ? `Batch: Approve & Swap & Stake ${estimatedRIF.toFixed(2)} tRIF`
+                  : needsApprovals 
+                    ? `Approve & Swap & Stake ${estimatedRIF.toFixed(2)} tRIF`
+                    : `Swap & Stake ${estimatedRIF.toFixed(2)} tRIF`
+                }
+              </>
+            )}
+          </button>
 
-      {/* Transaction Steps */}
-      <div className="text-center text-sm text-gray-500">
-        <p className="mb-2">This transaction will:</p>
-        <div className="flex justify-center gap-8">
-          <span>1. Approve tokens</span>
-          <span>2. Swap to tRIF</span>
-          <span>3. Auto-stake</span>
-        </div>
-      </div>
+          {/* Transaction Steps */}
+          <div className="text-center text-sm text-gray-500">
+            <p className="mb-2">
+              {chainId === 84532 ? 'This batch transaction will:' : 'These transactions will:'}
+            </p>
+            <div className="flex justify-center gap-6 flex-wrap">
+              {needsApprovals && <span>1. Approve tokens</span>}
+              <span>{needsApprovals ? '2.' : '1.'} Swap to tRIF</span>
+              <span>{needsApprovals ? '3.' : '2.'} Auto-stake</span>
+            </div>
+            <p className={`text-xs mt-2 ${chainId === 84532 ? 'text-green-600' : 'text-blue-600'}`}>
+              {chainId === 84532 
+                ? '✨ All steps executed atomically in one transaction'
+                : '⚡ Multiple transactions for maximum compatibility'
+              }
+            </p>
+          </div>
     </div>
   )
 }

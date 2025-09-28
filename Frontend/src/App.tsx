@@ -1,114 +1,62 @@
-import React, { useState } from 'react'
-import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
-import { parseUnits } from 'viem'
+import { useState, useEffect } from 'react'
+import { useAccount } from 'wagmi'
 import { WalletConnect } from './components/WalletConnect'
 import { TokenSelector } from './components/TokenSelector'
 import { SwapDepositInterface } from './components/SwapDepositInterface'
 import { Header } from './components/Header'
 import { Footer } from './components/Footer'
 import { StatsSection } from './components/StatsSection'
-import { CONTRACTS } from './constants/tokens'
-import RIFBatchDepositerABI from './contracts/RIFBatchDepositer.json'
+import { useBatchTransaction } from './hooks/useBatchTransaction'
 import type { SelectedToken } from './types'
 
 function App() {
   const { isConnected } = useAccount()
   const [selectedTokens, setSelectedTokens] = useState<SelectedToken[]>([])
   const [showSuccessModal, setShowSuccessModal] = useState(false)
-  const [transactionError, setTransactionError] = useState<string | null>(null)
   
-  const { writeContract, data: hash, error, isPending, reset } = useWriteContract()
-  
-  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
+  const {
+    isLoading,
+    batchId,
     hash,
-  })
+    error,
+    needsApprovals,
+    approvalStep,
+    totalApprovals,
+    isConfirmed,
+    chainId,
+    shouldUseEIP5792,
+    executeBatchTransaction,
+    reset
+  } = useBatchTransaction()
 
   // Handle transaction confirmation
-  React.useEffect(() => {
-    if (isConfirmed && hash) {
+  useEffect(() => {
+    if (isConfirmed) {
       setShowSuccessModal(true)
-      setTransactionError(null)
     }
-  }, [isConfirmed, hash])
-
-  // Handle errors
-  React.useEffect(() => {
-    if (error) {
-      if (error.message.includes('User rejected')) {
-        setTransactionError('Transaction was rejected by user')
-      } else if (error.message.includes('insufficient funds')) {
-        setTransactionError('Insufficient funds for transaction')
-      } else if (error.message.includes('gas')) {
-        setTransactionError('Gas estimation failed. Please try again.')
-      } else {
-        setTransactionError(error.message)
-      }
-    }
-  }, [error])
+  }, [isConfirmed])
 
   const handleTokenSelect = (tokens: SelectedToken[]) => {
     setSelectedTokens(tokens)
   }
 
-      const handleCloseModal = () => {
-        setShowSuccessModal(false)
-        setSelectedTokens([]) // Clear selected tokens
-        setTransactionError(null) // Clear any errors
-        reset() // Reset wagmi state
-      }
+  const handleCloseModal = () => {
+    setShowSuccessModal(false)
+    setSelectedTokens([]) // Clear selected tokens
+    reset() // Reset batch transaction state
+  }
 
   const handleClearError = () => {
-    setTransactionError(null)
-    reset() // Reset wagmi state
+    reset() // Reset batch transaction state
   }
 
   const handleSwapAndDeposit = async () => {
     if (!selectedTokens.length) return
 
     try {
-      // Prepare contract call parameters
-      const tokenAddresses: `0x${string}`[] = []
-      const tokenAmounts: bigint[] = []
-      let totalRIFAmount = 0n
-
-      // Convert token amounts to wei and calculate total RIF expected
-      selectedTokens.forEach(token => {
-        if (token.amount && parseFloat(token.amount) > 0) {
-          tokenAddresses.push(token.address as `0x${string}`)
-          
-          // Convert amount to wei based on token decimals
-          const amountInWei = parseUnits(token.amount, token.decimals)
-          tokenAmounts.push(amountInWei)
-
-          // Calculate expected RIF amount for this token
-          const rifRate = token.symbol === 'rUSDT' ? 17.1143 : 
-                         token.symbol === 'rUSDC' ? 17.1143 : 
-                         token.symbol === 'rBTC' ? 1882594 :
-                         token.symbol === 'wETH' ? 56000 : 17.1143
-
-          const rifAmount = parseFloat(token.amount) * rifRate
-          totalRIFAmount += parseUnits(rifAmount.toString(), 18) // RIF has 18 decimals
-        }
-      })
-
-      console.log('Contract call parameters:', {
-        contract: CONTRACTS.RIF_BATCH_DEPOSITER,
-        tokens: tokenAddresses,
-        amounts: tokenAmounts,
-        rifAmount: totalRIFAmount.toString()
-      })
-
-      // Call the contract function
-      writeContract({
-        address: CONTRACTS.RIF_BATCH_DEPOSITER as `0x${string}`,
-        abi: RIFBatchDepositerABI.abi,
-        functionName: 'executeCallsAndDeposit',
-        args: [tokenAddresses, tokenAmounts, totalRIFAmount],
-      })
-
+      await executeBatchTransaction(selectedTokens)
     } catch (error) {
-      console.error('Error preparing transaction:', error)
-      alert('Failed to prepare transaction!')
+      console.error('Error executing batch transaction:', error)
     }
   }
 
@@ -168,15 +116,21 @@ function App() {
           {/* Swap and Deposit Interface */}
           {isConnected && selectedTokens.length > 0 && (
       <div className="card">
-              <SwapDepositInterface 
-                selectedTokens={selectedTokens}
-                onSwapAndDeposit={handleSwapAndDeposit}
-                isLoading={isPending || isConfirming}
-                hash={hash}
-                isConfirmed={isConfirmed}
-                error={transactionError}
-                onClearError={handleClearError}
-              />
+                  <SwapDepositInterface 
+                    selectedTokens={selectedTokens}
+                    onSwapAndDeposit={handleSwapAndDeposit}
+                    isLoading={isLoading}
+                    hash={hash || (batchId as `0x${string}` | undefined)}
+                    isConfirmed={isConfirmed}
+                    error={error}
+                    onClearError={handleClearError}
+                    needsApprovals={needsApprovals}
+                    batchId={batchId}
+                    approvalStep={approvalStep}
+                    totalApprovals={totalApprovals}
+                    isEIP5792={shouldUseEIP5792}
+                    chainId={chainId}
+                  />
             </div>
           )}
         </div>
@@ -219,8 +173,8 @@ function App() {
 
       <Footer />
 
-      {/* Success Modal */}
-      {showSuccessModal && hash && (
+          {/* Success Modal */}
+          {showSuccessModal && (batchId || hash) && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 relative">
             {/* Close button */}
@@ -249,18 +203,23 @@ function App() {
                 Your tokens have been swapped and staked successfully!
               </p>
 
-              {/* Transaction hash */}
-              <div className="bg-gray-50 rounded-lg p-4 mb-6">
-                <p className="text-sm text-gray-500 mb-2">Transaction Hash:</p>
-                <p className="font-mono text-xs text-gray-700 break-all">
-                  {hash}
-        </p>
-      </div>
+                  {/* Transaction hash */}
+                  <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                    <p className="text-sm text-gray-500 mb-2">
+                      {batchId ? 'Batch Transaction ID:' : 'Transaction Hash:'}
+                    </p>
+                    <p className="font-mono text-xs text-gray-700 break-all">
+                      {batchId || hash}
+                    </p>
+                  </div>
 
               {/* Action buttons */}
               <div className="flex flex-col sm:flex-row gap-3">
                 <a
-                  href={`https://explorer.testnet.rootstock.io/tx/${hash}`}
+                  href={`${chainId === 84532 
+                    ? `https://sepolia.basescan.org/tx/${batchId || hash}` 
+                    : `https://explorer.testnet.rootstock.io/tx/${batchId || hash}`
+                  }`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex-1 btn-primary text-center py-3 px-4 text-sm flex items-center justify-center gap-2"
