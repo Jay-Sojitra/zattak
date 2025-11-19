@@ -10,6 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "dotenv": "^17.2.3",
     "sushi": "^6.1.14",
     "viem": "^2.37.8",
     "zod": "^4.1.11"
