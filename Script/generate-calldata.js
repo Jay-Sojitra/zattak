@@ -52,7 +52,7 @@ async function generateSwapCalldata(tokenIn, amountIn) {
     chainId: 30, // Use 30 directly; cast as ChainId if type error (e.g., 30 as ChainId)
     tokenIn: tokenIn,
     tokenOut: '0x2AcC95758f8b5F583470ba265EB685a8F45fC9D5', // RIF
-    sender: '0x922164BBBd36Acf9E854AcBbF32faCC949fCAEef', // Use whale address as recipient
+    sender: '0x14b437488D0e6562E4f61E377BEF895233fdd917', // Use whale address as recipient
     amount: amountIn, // BigInt amount (adjust for decimals)
     maxSlippage: 0.005, // 0.5%
   });

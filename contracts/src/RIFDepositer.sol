@@ -57,8 +57,8 @@ contract RIFDepositer {
             }
         }
 
-        // Record user's RIF balance before swaps
-        uint256 userRifBalanceBefore = IERC20(RIF_TOKEN).balanceOf(msg.sender);
+        // Record contract's RIF balance before swaps
+        uint256 contractRifBalanceBefore = IERC20(RIF_TOKEN).balanceOf(address(this));
 
         // Execute swap calls - router will revert if slippage exceeded
         for (uint256 i; i < length; ) {
@@ -72,18 +72,15 @@ contract RIFDepositer {
         }
 
         // Calculate how much RIF user received from swaps
-        uint256 userRifBalanceAfter = IERC20(RIF_TOKEN).balanceOf(msg.sender);
+        uint256 contractRifBalanceAfter = IERC20(RIF_TOKEN).balanceOf(address(this));
         uint256 rifReceived;
         unchecked {
-            // Safe because userRifBalanceAfter >= userRifBalanceBefore after successful swaps
-            rifReceived = userRifBalanceAfter - userRifBalanceBefore;
+            // Safe because contractRifBalanceAfter >= contractRifBalanceBefore after successful swaps
+            rifReceived = contractRifBalanceAfter - contractRifBalanceBefore;
         }
 
         // Stake the received RIF tokens
         if (rifReceived > 0) {
-            // Pull RIF from user to this contract
-            IERC20(RIF_TOKEN).transferFrom(msg.sender, address(this), rifReceived);
-
             // Approve staking contract
             IERC20(RIF_TOKEN).approve(STAKING_CONTRACT, rifReceived);
 

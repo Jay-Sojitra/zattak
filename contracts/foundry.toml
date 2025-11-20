@@ -11,7 +11,10 @@ via_ir = true
 
 # Rootstock network configuration
 [rpc_endpoints]
-rootstock = "https://public-node.rsk.co"
+rootstock = "${ROOTSTOCK_RPC_URL}"
+
+[etherscan]
+rootstock = { key = "${ROOTSTOCK_API_KEY}", url = "https://rootstock.blockscout.com" }
 
 # For forking tests
 [profile.fork]
