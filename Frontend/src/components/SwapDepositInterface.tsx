@@ -1,5 +1,9 @@
 import { useState } from 'react'
-import { ArrowDownUp, Zap, Shield, TrendingUp, AlertTriangle } from 'lucide-react'
+import { ArrowDownUp, Zap, Shield, TrendingUp, AlertTriangle, RefreshCw } from 'lucide-react'
+import { useAccount } from 'wagmi'
+import { useSwapQuotes } from '../hooks/useSwapQuotes'
+import { useTokenPrices } from '../hooks/useTokenPrices'
+import { TOKENS, CONTRACTS } from '../constants/tokens'
 import type { SelectedToken } from '../types'
 
 interface SwapDepositInterfaceProps {
@@ -35,24 +39,57 @@ export function SwapDepositInterface({
 }: SwapDepositInterfaceProps) {
   const [slippage, setSlippage] = useState('0.5')
   const [showAdvanced, setShowAdvanced] = useState(false)
+  const { address } = useAccount()
+  
+  // Get swap quotes for selected tokens
+  const { 
+    quotes, 
+    totalRIF, 
+    totalPriceImpact, 
+    isLoading: quotesLoading, 
+    error: quotesError,
+    refreshQuotes,
+    getQuoteForToken
+  } = useSwapQuotes(selectedTokens, address)
+  
+  // Get real prices for all tokens including RIF
+  const allTokenAddresses = [
+    TOKENS.RUSDT.address,
+    TOKENS.USDT.address,
+    TOKENS.RBTC.address,
+    TOKENS.WETH.address,
+    CONTRACTS.RIF_TOKEN
+  ]
+  const { getPrice } = useTokenPrices(allTokenAddresses)
 
   const calculateEstimatedRIF = () => {
-    // Realistic calculation based on actual swap rates from images
+    // Use real swap quotes if available and valid
+    const hasValidQuotes = quotes.length > 0 && !quotesLoading && totalRIF !== '0' && parseFloat(totalRIF) > 0;
+    
+    if (hasValidQuotes) {
+      console.log('Using real quotes:', totalRIF);
+      return parseFloat(totalRIF);
+    }
+    
+    // Fallback calculation when quotes are loading or failed
+    console.log('Using fallback calculation, quotes state:', {
+      quotesLength: quotes.length,
+      quotesLoading,
+      totalRIF,
+      quotesError
+    });
+    
     return selectedTokens.reduce((total, token) => {
       const amount = parseFloat(token.amount || '0')
       
-      // Based on the swap interface images:
-      // 1 rUSDT = 17.1143 RIF
-      // 1 rUSDC = 17.1143 RIF (same as USDT)
-      // 1 rBTC = 1,882,594 RIF
-      // 1 wETH = ~56,000 RIF (estimated from ETH price)
+      // Use real prices to calculate RIF equivalent
+      const tokenPrice = getPrice(token.address) || 0
+      const rifPrice = getPrice(CONTRACTS.RIF_TOKEN) || 0.10 // fallback RIF price
       
-      const rifRate = token.symbol === 'rUSDT' ? 17.1143 : 
-                     token.symbol === 'rUSDC' ? 17.1143 : 
-                     token.symbol === 'rBTC' ? 1882594 :
-                     token.symbol === 'wETH' ? 56000 : 17.1143
+      const usdValue = amount * tokenPrice
+      const rifAmount = rifPrice > 0 ? usdValue / rifPrice : 0
       
-      return total + (amount * rifRate)
+      return total + rifAmount
     }, 0)
   }
 
@@ -110,10 +147,7 @@ export function SwapDepositInterface({
                 <p className="font-semibold">{token.amount || '0'}</p>
                 <p className="text-sm text-gray-500">≈ ${(() => {
                   const amount = parseFloat(token.amount || '0')
-                  const price = token.symbol === 'rUSDT' ? 1 : 
-                               token.symbol === 'rUSDC' ? 1 : 
-                               token.symbol === 'rBTC' ? 65000 :
-                               token.symbol === 'wETH' ? 3200 : 1
+                  const price = getPrice(token.address) || 0
                   return (amount * price).toFixed(2)
                 })()}</p>
               </div>
@@ -130,24 +164,107 @@ export function SwapDepositInterface({
           <div className="p-6 card-gradient rounded-xl border-2 border-rootstock-orange/30">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-12 h-12 bg-rootstock-orange rounded-full flex items-center justify-center">
-                <span className="text-white font-bold">tRIF</span>
+                <span className="text-white font-bold">RIF</span>
               </div>
               <div>
-                <p className="font-semibold text-lg">Test RIF Token</p>
+                <p className="font-semibold text-lg">RIF Token</p>
                 <p className="text-sm text-gray-500">Automatically staked</p>
               </div>
             </div>
             <div className="text-right">
-              <p className="text-2xl font-bold text-rootstock-orange">
-                {estimatedRIF.toFixed(2)} tRIF
-              </p>
+              <div className="flex items-center gap-2">
+                <p className="text-2xl font-bold text-rootstock-orange">
+                  {estimatedRIF.toFixed(2)} RIF
+                </p>
+                {quotesLoading && (
+                  <RefreshCw className="w-4 h-4 text-gray-400 animate-spin" />
+                )}
+              </div>
               <p className="text-sm text-gray-500">
-                ≈ ${(estimatedRIF * 0.058).toFixed(2)}
+                ≈ ${(estimatedRIF * (getPrice(CONTRACTS.RIF_TOKEN) || 0.10)).toFixed(2)}
+                {quotes.length > 0 && !quotesLoading && parseFloat(totalRIF) > 0 ? (
+                  <span className="text-green-600 ml-1">• Real-time</span>
+                ) : quotesError ? (
+                  <span className="text-red-500 ml-1">• Quote failed</span>
+                ) : quotesLoading ? (
+                  <span className="text-blue-500 ml-1">• Loading...</span>
+                ) : (
+                  <span className="text-amber-600 ml-1">• Estimated</span>
+                )}
               </p>
+              {totalPriceImpact > 0 && (
+                <p className="text-xs text-amber-600">
+                  Price Impact: {totalPriceImpact.toFixed(2)}%
+                </p>
+              )}
             </div>
           </div>
         </div>
       </div>
+
+      {/* Real-time Quote Details */}
+      {selectedTokens.length > 0 && (
+        <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="font-medium text-blue-800 flex items-center gap-2">
+              <TrendingUp className="w-4 h-4" />
+              Real-time Swap Quotes
+            </h4>
+            <button
+              onClick={refreshQuotes}
+              disabled={quotesLoading}
+              className="p-1 text-blue-600 hover:text-blue-800 disabled:opacity-50"
+              title="Refresh quotes"
+            >
+              <RefreshCw className={`w-4 h-4 ${quotesLoading ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
+
+          {quotesError && (
+            <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded text-red-600 text-sm">
+              Quote Error: {quotesError}
+            </div>
+          )}
+
+          <div className="space-y-2">
+            {selectedTokens.map((token) => {
+              const quote = getQuoteForToken(token.address);
+              const amount = parseFloat(token.amount || '0');
+              
+              if (amount <= 0) return null;
+
+              return (
+                <div key={token.address} className="flex justify-between items-center text-sm">
+                  <span className="text-gray-600">
+                    {token.amount} {token.symbol} →
+                  </span>
+                  <span className="font-medium text-blue-700">
+                    {quotesLoading ? (
+                      <span className="flex items-center gap-1">
+                        <RefreshCw className="w-3 h-3 animate-spin" />
+                        Loading...
+                      </span>
+                    ) : quote?.success ? (
+                      `${parseFloat(quote.amountOutFormatted).toFixed(4)} RIF`
+                    ) : quote?.error ? (
+                      <span className="text-red-500" title={quote.error}>Quote failed</span>
+                    ) : (
+                      <span className="text-gray-400">No quote</span>
+                    )}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+
+          {quotes.length > 0 && !quotesLoading && (
+            <div className="mt-3 pt-3 border-t border-blue-200 flex justify-between items-center font-semibold text-blue-800">
+              <span>Total Expected:</span>
+              <span>{totalRIF} RIF</span>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Advanced Settings */}
       {showAdvanced && (
@@ -190,7 +307,7 @@ export function SwapDepositInterface({
                 Estimated Gas Fee
               </label>
               <p className="text-sm text-gray-600 bg-white p-2 rounded-lg border border-gray-200">
-                {calculateGasFee()} RBTC (≈ ${(parseFloat(calculateGasFee()) * 0.5).toFixed(2)})
+                {calculateGasFee()} RBTC (≈ ${(parseFloat(calculateGasFee()) * (getPrice(TOKENS.RBTC.address) || 65000)).toFixed(2)})
               </p>
             </div>
           </div>

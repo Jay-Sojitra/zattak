@@ -4,7 +4,8 @@ import { encodeFunctionData, parseUnits } from 'viem'
 import type { Address } from 'viem'
 import { sendCalls } from "@wagmi/core"
 import { CONTRACTS } from '../constants/tokens'
-import RIFBatchDepositerABI from '../contracts/RIFBatchDepositer.json'
+import RIFDepositerABI from '../contracts/RIFBatchDepositer.json'
+import { generateBatchCalldata } from '../utils/calldata'
 import type { SelectedToken } from '../types'
 
 // ERC20 ABI for approve and allowance functions
@@ -67,7 +68,7 @@ export function useBatchTransaction() {
     isEIP5792: false
   })
   
-  // Check if we should use EIP-5792 (Base Sepolia = 84532)
+  // Check if we should use EIP-5792 (Base Sepolia = 84532, for Rootstock mainnet = 30, use traditional flow)
   const shouldUseEIP5792 = chainId === 84532
 
   // Check allowance for a specific token
@@ -107,9 +108,8 @@ export function useBatchTransaction() {
     // Prepare contract call parameters
     const tokenAddresses: Address[] = []
     const tokenAmounts: bigint[] = []
-    let totalRIFAmount = 0n
 
-    // Convert token amounts to wei and calculate total RIF expected
+    // Convert token amounts to wei
     selectedTokens.forEach(token => {
       if (token.amount && parseFloat(token.amount) > 0) {
         tokenAddresses.push(token.address as Address)
@@ -117,15 +117,6 @@ export function useBatchTransaction() {
         // Convert amount to wei based on token decimals
         const amountInWei = parseUnits(token.amount, token.decimals)
         tokenAmounts.push(amountInWei)
-
-        // Calculate expected RIF amount for this token
-        const rifRate = token.symbol === 'rUSDT' ? 17.1143 : 
-                       token.symbol === 'rUSDC' ? 17.1143 : 
-                       token.symbol === 'rBTC' ? 1882594 :
-                       token.symbol === 'wETH' ? 56000 : 17.1143
-
-        const rifAmount = parseFloat(token.amount) * rifRate
-        totalRIFAmount += parseUnits(rifAmount.toString(), 18) // RIF has 18 decimals
       }
     })
 
@@ -142,10 +133,10 @@ export function useBatchTransaction() {
     try {
       if (shouldUseEIP5792) {
         // Base Sepolia: Use EIP-5792 batch transactions
-        return await executeEIP5792Batch(tokenAddresses, tokenAmounts, totalRIFAmount)
+        return await executeEIP5792Batch(tokenAddresses, tokenAmounts, 0n)
       } else {
-        // Rootstock: Use traditional separate transactions
-        return await executeTraditionalFlow(tokenAddresses, tokenAmounts, totalRIFAmount)
+        // Rootstock: Use traditional separate transactions with calldata generation
+        return await executeRootstockFlow(tokenAddresses, tokenAmounts)
       }
     } catch (error: any) {
       console.error('Transaction error:', error)
@@ -186,7 +177,7 @@ export function useBatchTransaction() {
       const currentAllowance = await checkAllowance(
         tokenAddresses[i],
         address,
-        CONTRACTS.RIF_BATCH_DEPOSITER as Address
+        CONTRACTS.RIF_DEPOSITER as Address
       )
       
       console.log(`Token ${tokenAddresses[i]} - Current allowance: ${currentAllowance.toString()}, Required: ${tokenAmounts[i].toString()}`)
@@ -212,14 +203,14 @@ export function useBatchTransaction() {
 
     // Prepare main contract call data
     const supplyCalldata = encodeFunctionData({
-      abi: RIFBatchDepositerABI.abi,
+      abi: RIFDepositerABI.abi,
       functionName: 'executeCallsAndDeposit',
       args: [tokenAddresses, tokenAmounts, totalRIFAmount],
     })
 
     // Add main contract call
     calls.push({
-      to: CONTRACTS.RIF_BATCH_DEPOSITER as Address,
+      to: CONTRACTS.RIF_DEPOSITER as Address,
       data: supplyCalldata,
       value: BigInt(0)
     })
@@ -245,6 +236,109 @@ export function useBatchTransaction() {
     return { success: true, batchId: id }
   }, [wagmiConfig, address, checkAllowance])
 
+  // Rootstock flow with real-time calldata generation
+  const executeRootstockFlow = useCallback(async (
+    tokenAddresses: Address[],
+    tokenAmounts: bigint[]
+  ) => {
+    if (!address) return { success: false, error: 'No address' }
+
+    setState(prev => ({ ...prev, approvalStep: 1 }))
+
+    try {
+      // Step 1: Generate calldata for all swaps
+      console.log('Generating swap calldata for tokens...')
+      const callDataArray = await generateBatchCalldata(
+        tokenAddresses,
+        tokenAmounts,
+        address,
+        0.005 // 0.5% slippage
+      )
+
+      console.log('Generated calldata for all swaps:', callDataArray.length)
+
+      // Step 2: Check allowances and execute approvals only if needed
+      const approvalsNeeded: Array<{ tokenAddress: Address; amount: bigint; index: number }> = []
+      
+      setState(prev => ({ ...prev, approvalStep: 2 }))
+      console.log('Checking allowances for tokens...')
+      
+      for (let i = 0; i < tokenAddresses.length; i++) {
+        const currentAllowance = await checkAllowance(
+          tokenAddresses[i],
+          address,
+          CONTRACTS.RIF_DEPOSITER as Address
+        )
+        
+        console.log(`Token ${tokenAddresses[i]} - Current allowance: ${currentAllowance.toString()}, Required: ${tokenAmounts[i].toString()}`)
+        
+        if (currentAllowance < tokenAmounts[i]) {
+          approvalsNeeded.push({
+            tokenAddress: tokenAddresses[i],
+            amount: tokenAmounts[i],
+            index: i
+          })
+          console.log(`Approval needed for token ${i + 1}: ${tokenAddresses[i]}`)
+        } else {
+          console.log(`Sufficient allowance for token ${i + 1}: ${tokenAddresses[i]}`)
+        }
+      }
+
+      setState(prev => ({ 
+        ...prev, 
+        totalApprovals: approvalsNeeded.length,
+        needsApprovals: approvalsNeeded.length > 0,
+        approvalStep: 3
+      }))
+
+      // Step 3: Execute approvals only for tokens that need them
+      for (let i = 0; i < approvalsNeeded.length; i++) {
+        const approval = approvalsNeeded[i]
+        setState(prev => ({ ...prev, approvalStep: 3 + i }))
+        
+        console.log(`Approving token ${i + 1}/${approvalsNeeded.length}: ${approval.tokenAddress}`)
+        
+        // Execute approval transaction
+        writeContract({
+          address: approval.tokenAddress,
+          abi: ERC20_ABI,
+          functionName: 'approve',
+          args: [CONTRACTS.RIF_DEPOSITER as Address, approval.amount],
+        })
+
+        // Add a small delay to prevent rapid-fire transactions
+        await new Promise(resolve => setTimeout(resolve, 1000))
+      }
+
+      // Step 4: Execute main contract call with generated calldata
+      setState(prev => ({ ...prev, approvalStep: 3 + approvalsNeeded.length + 1 }))
+      
+      console.log('Executing main contract call with generated calldata')
+      
+      writeContract({
+        address: CONTRACTS.RIF_DEPOSITER as Address,
+        abi: RIFDepositerABI.abi,
+        functionName: 'executeCallsAndDeposit',
+        args: [tokenAddresses, tokenAmounts, callDataArray],
+      })
+
+      setState(prev => ({ 
+        ...prev, 
+        hash: hash || null,
+        isLoading: false 
+      }))
+
+      return { success: true, hash: hash }
+    } catch (error: any) {
+      console.error('Rootstock flow error:', error)
+      setState(prev => ({ 
+        ...prev, 
+        error: `Calldata generation failed: ${error.message}`,
+        isLoading: false 
+      }))
+      return { success: false, error: error.message }
+    }
+  }, [writeContract, hash, address, checkAllowance])
 
   // Traditional flow for Rootstock (separate approvals + main tx)
   const executeTraditionalFlow = useCallback(async (
@@ -263,7 +357,7 @@ export function useBatchTransaction() {
       const currentAllowance = await checkAllowance(
         tokenAddresses[i],
         address,
-        CONTRACTS.RIF_BATCH_DEPOSITER as Address
+        CONTRACTS.RIF_DEPOSITER as Address
       )
       
       console.log(`Token ${tokenAddresses[i]} - Current allowance: ${currentAllowance.toString()}, Required: ${tokenAmounts[i].toString()}`)
@@ -315,7 +409,7 @@ export function useBatchTransaction() {
     
     writeContract({
       address: CONTRACTS.RIF_BATCH_DEPOSITER as Address,
-      abi: RIFBatchDepositerABI.abi,
+      abi: RIFDepositerABI.abi,
       functionName: 'executeCallsAndDeposit',
       args: [tokenAddresses, tokenAmounts, totalRIFAmount],
     })

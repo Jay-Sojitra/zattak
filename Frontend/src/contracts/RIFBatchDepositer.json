@@ -2,7 +2,33 @@
   "abi": [
     {
       "type": "function",
+      "name": "RIF_TOKEN",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
       "name": "STAKING_CONTRACT",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "TO_ADDRESS",
       "inputs": [],
       "outputs": [
         {
@@ -28,26 +54,34 @@
           "internalType": "uint256[]"
         },
         {
-          "name": "amount",
-          "type": "uint256",
-          "internalType": "uint256"
+          "name": "callDataArray",
+          "type": "bytes[]",
+          "internalType": "bytes[]"
         }
       ],
       "outputs": [],
       "stateMutability": "nonpayable"
     },
     {
-      "type": "function",
-      "name": "tRIF_TOKEN",
-      "inputs": [],
-      "outputs": [
+      "type": "error",
+      "name": "ArrayLengthMismatch",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "CallFailed",
+      "inputs": [
         {
-          "name": "",
-          "type": "address",
-          "internalType": "address"
+          "name": "callIndex",
+          "type": "uint256",
+          "internalType": "uint256"
         }
-      ],
-      "stateMutability": "view"
+      ]
+    },
+    {
+      "type": "error",
+      "name": "DepositFailed",
+      "inputs": []
     }
   ]
 }

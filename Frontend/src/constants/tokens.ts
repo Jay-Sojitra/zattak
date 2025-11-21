@@ -1,51 +1,59 @@
-// Rootstock Testnet Token Addresses (Updated with real addresses)
+// Rootstock Mainnet Token Addresses
 export const TOKENS = {
   RUSDT: {
-    address: '0x9c3Ea773d4DFB6CbC4a3d88078643020285fd37C',
+    address: '0xef213441A85dF4d7ACbDaE0Cf78004e1E486bB96',
     symbol: 'rUSDT',
-    name: 'Rootstock USDT',
+    name: 'Tether USD (Rootstock)',
     decimals: 18,
     logoUrl: '/tether-usdt-logo.svg'
   },
+  USDT: {
+    address: '0xAf368c91793CB22739386DFCbBb2F1A9e4bCBeBf',
+    symbol: 'USDT',
+    name: 'Tether USD',
+    decimals: 6,
+    logoUrl: '/tether-usdt-logo.svg'
+  },
   RBTC: {
-    address: '0xDF2c8f7852B3BAA4B728f8EAEfB75CCb3A76d363',
-    symbol: 'rBTC',
-    name: 'Rootstock Bitcoin',
+    address: '0x542fda317318ebf1d3deaf76e0b632741a7e677d',
+    symbol: 'WRBTC',
+    name: 'Wrapped Rootstock Bitcoin',
     decimals: 18,
     logoUrl: '/bitcoin-btc-logo.svg'
   },
-  RUSDC: {
-    address: '0xCa552b5ac029864D9c0cFae2c760E57B22f6a268',
-    symbol: 'rUSDC',
-    name: 'Rootstock USD Coin',
-    decimals: 18,
-    logoUrl: '/usd-coin-usdc-logo.svg'
-  },
   WETH: {
-    address: '0x917532db0765F594c766E81ae12fA54Bf7E477E4',
-    symbol: 'wETH',
+    address: '0x2f6f07cdcf3588944bf4c42ac74ff24bf56e7590',
+    symbol: 'WETH',
     name: 'Wrapped Ethereum',
     decimals: 18,
     logoUrl: '/ethereum-eth-logo.svg'
+  },
+  RIF: {
+    address: '0x2AcC95758f8b5F583470ba265EB685a8F45fC9D5',
+    symbol: 'RIF',
+    name: 'RIF Token',
+    decimals: 18,
+    logoUrl: '/logo_light.jpg'
   }
 } as const
 
-// Contract Addresses
+// Contract Addresses - Update with deployed address
 export const CONTRACTS = {
-  RIF_BATCH_DEPOSITER: '0xe38c8986823305bD73c2A33C60b4ba6d26024e19',
+  RIF_DEPOSITER: '0x14b437488D0e6562E4f61E377BEF895233fdd917', // Update this with actual deployed address
   SUSHI_ROUTER: '0xAC4c6e212A361c968F1725b4d055b47E63F80b75',
+  RIF_TOKEN: '0x2AcC95758f8b5F583470ba265EB685a8F45fC9D5',
   STAKING_CONTRACT: '0x5Db91E24BD32059584bbdB831a901F1199f3D459'
 } as const
 
-// Rootstock Testnet Configuration
+// Rootstock Mainnet Configuration
 export const NETWORK_CONFIG = {
-  chainId: 31,
-  name: 'Rootstock Testnet',
-  rpcUrl: 'https://public-node.testnet.rsk.co',
-  blockExplorerUrl: 'https://explorer.testnet.rsk.co',
+  chainId: 30,
+  name: 'Rootstock Mainnet',
+  rpcUrl: import.meta.env.VITE_ROOTSTOCK_RPC_URL || 'https://public-node.rsk.co',
+  blockExplorerUrl: 'https://explorer.rootstock.io',
   nativeCurrency: {
-    name: 'Test RBTC',
-    symbol: 'tRBTC',
+    name: 'Rootstock Bitcoin',
+    symbol: 'RBTC',
     decimals: 18
   }
 } as const

@@ -1,7 +1,9 @@
 import React, { useState } from 'react'
-import { Plus, Minus, Coins, Copy, Check } from 'lucide-react'
+import { Plus, Minus, Coins, Copy, Check, RefreshCw } from 'lucide-react'
 import { useAccount, useBalance } from 'wagmi'
 import { formatUnits } from 'viem'
+import { TOKENS } from '../constants/tokens'
+import { useTokenPrices } from '../hooks/useTokenPrices'
 import type { SelectedToken } from '../types'
 
 interface TokenSelectorProps {
@@ -9,55 +11,35 @@ interface TokenSelectorProps {
   selectedTokens: SelectedToken[]
 }
 
-// Available tokens for Rootstock testnet
+// Available tokens for Rootstock mainnet - using real token addresses
 const AVAILABLE_TOKENS = [
   {
-    address: '0x9c3Ea773d4DFB6CbC4a3d88078643020285fd37C',
-    symbol: 'rUSDT',
-    name: 'Rootstock USDT',
-    decimals: 18,
-    balance: '1,250.50',
-    logoUrl: '/tether-usdt-logo.svg'
+    address: TOKENS.RUSDT.address,
+    symbol: TOKENS.RUSDT.symbol,
+    name: TOKENS.RUSDT.name,
+    decimals: TOKENS.RUSDT.decimals,
+    logoUrl: TOKENS.RUSDT.logoUrl
   },
   {
-    address: '0xDF2c8f7852B3BAA4B728f8EAEfB75CCb3A76d363',
-    symbol: 'rBTC',
-    name: 'Rootstock Bitcoin',
-    decimals: 18,
-    balance: '2.45',
-    logoUrl: '/bitcoin-btc-logo.svg'
+    address: TOKENS.USDT.address,
+    symbol: TOKENS.USDT.symbol,
+    name: TOKENS.USDT.name,
+    decimals: TOKENS.USDT.decimals,
+    logoUrl: TOKENS.USDT.logoUrl
   },
   {
-    address: '0xCa552b5ac029864D9c0cFae2c760E57B22f6a268',
-    symbol: 'rUSDC',
-    name: 'Rootstock USD Coin',
-    decimals: 18,
-    balance: '892.25',
-    logoUrl: '/usd-coin-usdc-logo.svg'
+    address: TOKENS.RBTC.address,
+    symbol: TOKENS.RBTC.symbol,
+    name: TOKENS.RBTC.name,
+    decimals: TOKENS.RBTC.decimals,
+    logoUrl: TOKENS.RBTC.logoUrl
   },
   {
-    address: '0x917532db0765F594c766E81ae12fA54Bf7E477E4',
-    symbol: 'wETH',
-    name: 'Wrapped Ethereum',
-    decimals: 18,
-    balance: '1.25',
-    logoUrl: '/ethereum-eth-logo.svg'
-  },
-  {
-    address: '0x490Ec82F495Dd01D5BD176fF00884DD4C97b4831',
-    symbol: 'Root',
-    name: 'Root Token',
-    decimals: 18,
-    balance: '1.25',
-    logoUrl: '/bitcoin-btc-logo.svg'
-  },
-  {
-    address: '0xA46Db2651fF07E4b529b3ddBb516Cd532841CA9F',
-    symbol: 'Stock',
-    name: 'Stock Token',
-    decimals: 18,
-    balance: '1.25',
-    logoUrl: '/tether-usdt-logo.svg'
+    address: TOKENS.WETH.address,
+    symbol: TOKENS.WETH.symbol,
+    name: TOKENS.WETH.name,
+    decimals: TOKENS.WETH.decimals,
+    logoUrl: TOKENS.WETH.logoUrl
   }
 ]
 
@@ -100,13 +82,17 @@ function TokenCard({
   isSelected,
   selectedToken,
   onToggle,
-  onAmountChange
+  onAmountChange,
+  getPrice,
+  formatValue
 }: {
   token: typeof AVAILABLE_TOKENS[0]
   isSelected: boolean
   selectedToken?: SelectedToken
   onToggle: () => void
   onAmountChange: (amount: string) => void
+  getPrice: (address: string) => number
+  formatValue: (address: string, amount: string) => string
 }) {
   const { balance, isLoading, error } = useTokenBalance(token.address, token.decimals)
   const [copied, setCopied] = useState(false)
@@ -137,6 +123,8 @@ function TokenCard({
   })
 
   const maxAmount = isLoading ? '0' : balance
+  const tokenPrice = getPrice(token.address)
+  const balanceUSD = formatValue(token.address, balance)
 
   return (
     <div
@@ -172,6 +160,9 @@ function TokenCard({
               </button>
             </div>
             <p className="text-sm text-gray-500">{token.name}</p>
+            {tokenPrice > 0 && (
+              <p className="text-xs text-gray-400">${tokenPrice.toFixed(4)} USD</p>
+            )}
           </div>
         </div>
 
@@ -195,7 +186,12 @@ function TokenCard({
           {isLoading ? (
             displayBalance
           ) : (
-            <span>{displayBalance} {token.symbol}</span>
+            <div>
+              <span>{displayBalance} {token.symbol}</span>
+              {!error && tokenPrice > 0 && parseFloat(balance) > 0 && (
+                <p className="text-sm text-gray-400 mt-1">{balanceUSD}</p>
+              )}
+            </div>
           )}
         </div>
       </div>
@@ -207,17 +203,25 @@ function TokenCard({
             Amount to swap
           </label>
           <div className="flex gap-2">
-            <input
-              type="number"
-              placeholder="0.00"
-              value={selectedToken?.amount || ''}
-              onChange={(e) => onAmountChange(e.target.value)}
-              className="input-field text-lg"
-              step="0.01"
-              min="0"
-              max={maxAmount}
-              disabled={isLoading}
-            />
+            <div className="flex-1">
+              <input
+                type="number"
+                placeholder="0.00"
+                value={selectedToken?.amount || ''}
+                onChange={(e) => onAmountChange(e.target.value)}
+                className="input-field text-lg"
+                step="0.01"
+                min="0"
+                max={maxAmount}
+                disabled={isLoading}
+              />
+              {/* USD Value Display */}
+              {selectedToken?.amount && parseFloat(selectedToken.amount) > 0 && tokenPrice > 0 && (
+                <div className="mt-2 text-sm text-gray-500">
+                  ≈ {formatValue(token.address, selectedToken.amount)}
+                </div>
+              )}
+            </div>
             <button
               onClick={() => onAmountChange(maxAmount)}
               className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
@@ -235,6 +239,10 @@ function TokenCard({
 export function TokenSelector({ onTokenSelect, selectedTokens }: TokenSelectorProps) {
   const [searchTerm, setSearchTerm] = useState('')
   const { address } = useAccount()
+  
+  // Get prices for all available tokens
+  const tokenAddresses = AVAILABLE_TOKENS.map(token => token.address)
+  const { getPrice, formatValue, refreshPrices, isLoading: pricesLoading, error: pricesError } = useTokenPrices(tokenAddresses)
 
   const filteredTokens = AVAILABLE_TOKENS.filter(token =>
     token.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -267,30 +275,47 @@ export function TokenSelector({ onTokenSelect, selectedTokens }: TokenSelectorPr
   }
 
   const getTotalUSDValue = () => {
-    // Realistic USD calculation based on actual swap rates
+    // Calculate total USD value using real prices
     return selectedTokens.reduce((total, token) => {
       const amount = parseFloat(token.amount || '0')
-      const mockPrice = token.symbol === 'rUSDT' ? 1 :
-        token.symbol === 'rUSDC' ? 1 :
-          token.symbol === 'rBTC' ? 65000 :
-            token.symbol === 'wETH' ? 3200 : 1
-      return total + (amount * mockPrice)
+      const price = getPrice(token.address)
+      return total + (amount * price)
     }, 0)
   }
 
   return (
     <div className="space-y-6">
-      {/* Search */}
-      <div className="relative">
-        <input
-          type="text"
-          placeholder="Search tokens..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="input-field pl-10"
-        />
-        <Coins className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+      {/* Search and Price Refresh */}
+      <div className="flex gap-3">
+        <div className="relative flex-1">
+          <input
+            type="text"
+            placeholder="Search tokens..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="input-field pl-10"
+          />
+          <Coins className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+        </div>
+        
+        {/* Price Refresh Button */}
+        <button
+          onClick={refreshPrices}
+          disabled={pricesLoading}
+          className="px-4 py-2 bg-rootstock-orange text-white rounded-lg hover:bg-rootstock-orange-dark transition-colors disabled:opacity-50 flex items-center gap-2"
+          title="Refresh token prices"
+        >
+          <RefreshCw className={`w-4 h-4 ${pricesLoading ? 'animate-spin' : ''}`} />
+          {pricesLoading ? 'Updating...' : 'Refresh Prices'}
+        </button>
       </div>
+
+      {/* Price Error */}
+      {pricesError && (
+        <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-red-600 text-sm">Price fetch error: {pricesError}</p>
+        </div>
+      )}
 
       {/* Available Tokens */}
       <div className="grid gap-4">
@@ -314,6 +339,8 @@ export function TokenSelector({ onTokenSelect, selectedTokens }: TokenSelectorPr
                   selectedToken={selectedToken}
                   onToggle={() => handleTokenToggle(token)}
                   onAmountChange={(amount) => handleAmountChange(token.address, amount)}
+                  getPrice={getPrice}
+                  formatValue={formatValue}
                 />
               )
             })}

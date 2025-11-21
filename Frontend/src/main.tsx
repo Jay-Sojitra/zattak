@@ -9,10 +9,37 @@ import { WagmiProvider } from 'wagmi'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { baseSepolia } from 'wagmi/chains'
 
-// Rootstock Testnet chain configuration
+// Rootstock Mainnet chain configuration with custom icon
+const rootstockMainnet = {
+  id: 30,
+  name: 'Rootstock Mainnet',
+  iconUrl: '/logo_light.jpg',
+  iconBackground: '#FF6600',
+  nativeCurrency: {
+    decimals: 18,
+    name: 'Rootstock Bitcoin',
+    symbol: 'RBTC',
+  },
+  rpcUrls: {
+    default: {
+      http: [import.meta.env.VITE_ROOTSTOCK_RPC_URL || 'https://public-node.rsk.co'],
+    },
+    public: {
+      http: [import.meta.env.VITE_ROOTSTOCK_RPC_URL || 'https://public-node.rsk.co'],
+    },
+  },
+  blockExplorers: {
+    default: { name: 'Rootstock Explorer', url: 'https://explorer.rootstock.io' },
+  },
+  testnet: false,
+} as const
+
+// Rootstock Testnet chain configuration (kept for development)
 const rootstockTestnet = {
   id: 31,
   name: 'Rootstock Testnet',
+  iconUrl: '/logo_light.jpg',
+  iconBackground: '#FFA500',
   nativeCurrency: {
     decimals: 18,
     name: 'Test RBTC',
@@ -32,7 +59,7 @@ const rootstockTestnet = {
 const config = getDefaultConfig({
   appName: 'RIF Staking Hub',
   projectId: 'YOUR_PROJECT_ID', // Get this from WalletConnect Cloud
-  chains: [baseSepolia, rootstockTestnet],
+  chains: [rootstockMainnet, baseSepolia, rootstockTestnet],
   ssr: false,
 })
 

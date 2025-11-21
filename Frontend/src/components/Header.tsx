@@ -13,7 +13,7 @@ export function Header() {
             </div>
             <div>
               <h1 className="text-xl font-bold text-gray-800">RIF Staking</h1>
-              <p className="text-xs text-gray-500">Rootstock Testnet</p>
+              <p className="text-xs text-gray-500">Rootstock Mainnet</p>
             </div>
           </div>
 
@@ -29,11 +29,6 @@ export function Header() {
               <Github className="w-5 h-5" />
             </a>
             
-            {/* Network indicator */}
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-green-100 text-green-700 rounded-full text-sm">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              Testnet
-            </div>
 
             {/* Connect Button */}
             <div className="hidden md:block">
