@@ -53,7 +53,7 @@ export async function withRetry<T>(
   context: string = 'API call'
 ): Promise<T> {
   let attempt = 0;
-  let lastError: Error;
+  let lastError: Error | undefined;
 
   while (attempt <= config.maxRetries) {
     try {
@@ -140,7 +140,7 @@ export async function withSmartRetry<T>(
   context: string = 'API call'
 ): Promise<T> {
   let attempt = 0;
-  let lastError: Error;
+  let lastError: Error | undefined;
 
   while (attempt <= config.maxRetries) {
     try {

@@ -13,7 +13,7 @@ export function Footer() {
               </div>
               <div>
                 <h3 className="text-white font-bold">RIF Staking</h3>
-                <p className="text-xs text-gray-400">Rootstock Testnet</p>
+                <p className="text-xs text-gray-400">Rootstock Mainnet</p>
               </div>
             </div>
             <p className="text-sm text-gray-400 max-w-xs">
@@ -37,9 +37,9 @@ export function Footer() {
             <h4 className="text-white font-semibold mb-4">Resources</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <a 
-                  href="https://developers.rsk.co/" 
-                  target="_blank" 
+                <a
+                  href="https://developers.rsk.co/"
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-white transition-colors flex items-center gap-1"
                 >
@@ -48,20 +48,20 @@ export function Footer() {
                 </a>
               </li>
               <li>
-                <a 
-                  href="https://explorer.testnet.rootstock.io/" 
-                  target="_blank" 
+                <a
+                  href="https://explorer.rootstock.io/"
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-white transition-colors flex items-center gap-1"
                 >
-                  Testnet Faucet
+                  Mainnet Explorer
                   <ExternalLink className="w-3 h-3" />
                 </a>
               </li>
               <li>
-                <a 
-                  href="https://explorer.testnet.rsk.co/" 
-                  target="_blank" 
+                <a
+                  href="https://explorer.rsk.co/"
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-white transition-colors flex items-center gap-1"
                 >
@@ -77,37 +77,37 @@ export function Footer() {
           <div>
             <h4 className="text-white font-semibold mb-4">Community</h4>
             <div className="flex space-x-4">
-              <a 
-                href="https://github.com/Jay-Sojitra/zattak" 
-                target="_blank" 
+              <a
+                href="https://github.com/Jay-Sojitra/zattak"
+                target="_blank"
                 rel="noopener noreferrer"
                 className="p-2 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors"
               >
                 <Github className="w-5 h-5" />
               </a>
-              <a 
-                href="https://twitter.com/rootstock_io" 
-                target="_blank" 
+              <a
+                href="https://twitter.com/rootstock_io"
+                target="_blank"
                 rel="noopener noreferrer"
                 className="p-2 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors"
               >
                 <Twitter className="w-5 h-5" />
               </a>
-              <a 
-                href="https://discord.gg/rootstock" 
-                target="_blank" 
+              <a
+                href="https://discord.gg/rootstock"
+                target="_blank"
                 rel="noopener noreferrer"
                 className="p-2 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors"
               >
                 <MessageCircle className="w-5 h-5" />
               </a>
             </div>
-            
+
             <div className="mt-6">
               <h5 className="text-white font-medium mb-2">Network Status</h5>
               <div className="flex items-center gap-2 text-sm">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span>Rootstock Testnet Online</span>
+                <span>Rootstock Mainnet Online</span>
               </div>
             </div>
           </div>
@@ -117,14 +117,14 @@ export function Footer() {
         <div className="border-t border-gray-800 pt-8 mt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-sm text-gray-400">
-              © 2024 RIF Staking Platform. Built for Rootstock Testnet.
+              © 2024 RIF Staking Platform. Built for Rootstock Mainnet.
             </p>
             <div className="flex items-center gap-6 mt-4 md:mt-0 text-sm">
               <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
               <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                <span className="text-orange-400">Testnet Only</span>
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-green-400">Mainnet Live</span>
               </div>
             </div>
           </div>

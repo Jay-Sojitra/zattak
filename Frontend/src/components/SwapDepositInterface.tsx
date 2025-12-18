@@ -22,9 +22,9 @@ interface SwapDepositInterfaceProps {
   chainId?: number
 }
 
-export function SwapDepositInterface({ 
-  selectedTokens, 
-  onSwapAndDeposit, 
+export function SwapDepositInterface({
+  selectedTokens,
+  onSwapAndDeposit,
   isLoading,
   hash,
   isConfirmed,
@@ -35,23 +35,23 @@ export function SwapDepositInterface({
   approvalStep = 0,
   totalApprovals = 0,
   isEIP5792 = false,
-  chainId = 31
+  chainId = 30
 }: SwapDepositInterfaceProps) {
   const [slippage, setSlippage] = useState('0.5')
   const [showAdvanced, setShowAdvanced] = useState(false)
   const { address } = useAccount()
-  
+
   // Get swap quotes for selected tokens
-  const { 
-    quotes, 
-    totalRIF, 
-    totalPriceImpact, 
-    isLoading: quotesLoading, 
+  const {
+    quotes,
+    totalRIF,
+    totalPriceImpact,
+    isLoading: quotesLoading,
     error: quotesError,
     refreshQuotes,
     getQuoteForToken
   } = useSwapQuotes(selectedTokens, address)
-  
+
   // Get real prices for all tokens including RIF
   const allTokenAddresses = [
     TOKENS.RUSDT.address,
@@ -65,12 +65,12 @@ export function SwapDepositInterface({
   const calculateEstimatedRIF = () => {
     // Use real swap quotes if available and valid
     const hasValidQuotes = quotes.length > 0 && !quotesLoading && totalRIF !== '0' && parseFloat(totalRIF) > 0;
-    
+
     if (hasValidQuotes) {
       console.log('Using real quotes:', totalRIF);
       return parseFloat(totalRIF);
     }
-    
+
     // Fallback calculation when quotes are loading or failed
     console.log('Using fallback calculation, quotes state:', {
       quotesLength: quotes.length,
@@ -78,17 +78,17 @@ export function SwapDepositInterface({
       totalRIF,
       quotesError
     });
-    
+
     return selectedTokens.reduce((total, token) => {
       const amount = parseFloat(token.amount || '0')
-      
+
       // Use real prices to calculate RIF equivalent
       const tokenPrice = getPrice(token.address) || 0
       const rifPrice = getPrice(CONTRACTS.RIF_TOKEN) || 0.10 // fallback RIF price
-      
+
       const usdValue = amount * tokenPrice
       const rifAmount = rifPrice > 0 ? usdValue / rifPrice : 0
-      
+
       return total + rifAmount
     }, 0)
   }
@@ -98,7 +98,7 @@ export function SwapDepositInterface({
     return (selectedTokens.length * 0.002).toFixed(4)
   }
 
-  const hasValidAmounts = selectedTokens.every(token => 
+  const hasValidAmounts = selectedTokens.every(token =>
     token.amount && parseFloat(token.amount) > 0
   )
 
@@ -131,9 +131,9 @@ export function SwapDepositInterface({
             <div key={token.address} className="flex justify-between items-center p-4 bg-gray-50 rounded-xl">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full flex items-center justify-center bg-white border border-gray-200 p-1">
-                  <img 
-                    src={token.logoUrl} 
-                    alt={token.symbol} 
+                  <img
+                    src={token.logoUrl}
+                    alt={token.symbol}
                     className="w-full h-full object-contain"
                     loading="eager"
                   />
@@ -230,7 +230,7 @@ export function SwapDepositInterface({
             {selectedTokens.map((token) => {
               const quote = getQuoteForToken(token.address);
               const amount = parseFloat(token.amount || '0');
-              
+
               if (amount <= 0) return null;
 
               return (
@@ -270,7 +270,7 @@ export function SwapDepositInterface({
       {showAdvanced && (
         <div className="p-4 bg-gray-50 rounded-xl space-y-4">
           <h4 className="font-medium text-gray-700">Advanced Settings</h4>
-          
+
           <div className="grid md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -281,11 +281,10 @@ export function SwapDepositInterface({
                   <button
                     key={value}
                     onClick={() => setSlippage(value)}
-                    className={`px-3 py-2 rounded-lg text-sm transition-colors ${
-                      slippage === value
+                    className={`px-3 py-2 rounded-lg text-sm transition-colors ${slippage === value
                         ? 'bg-rootstock-orange text-white'
                         : 'bg-white border border-gray-200 hover:border-rootstock-orange'
-                    }`}
+                      }`}
                   >
                     {value}%
                   </button>
@@ -301,7 +300,7 @@ export function SwapDepositInterface({
                 />
               </div>
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Estimated Gas Fee
@@ -356,97 +355,97 @@ export function SwapDepositInterface({
         </div>
       </div>
 
-          {/* Chain-specific Transaction Info */}
-          <div className="p-4 rounded-xl border bg-blue-50 border-blue-200">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-              <p className="text-sm font-medium text-blue-700">
-                {chainId === 84532 ? '🚀 Base Sepolia - EIP-5792 Batch' : '⚡ Rootstock Testnet - Traditional'}
-              </p>
-            </div>
-            <p className="text-xs mt-1 text-blue-600">
-              {chainId === 84532 
-                ? 'Checking allowances... Only needed approvals will be batched'
-                : needsApprovals 
-                  ? `${totalApprovals} approval transaction(s) needed + 1 main transaction`
-                  : 'Checking allowances... May skip approvals if sufficient'
-              }
-            </p>
-          </div>
+      {/* Chain-specific Transaction Info */}
+      <div className="p-4 rounded-xl border bg-blue-50 border-blue-200">
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+          <p className="text-sm font-medium text-blue-700">
+            {chainId === 84532 ? '🚀 Base Sepolia - EIP-5792 Batch' : '⚡ Rootstock Mainnet - Traditional'}
+          </p>
+        </div>
+        <p className="text-xs mt-1 text-blue-600">
+          {chainId === 84532
+            ? 'Checking allowances... Only needed approvals will be batched'
+            : needsApprovals
+              ? `${totalApprovals} approval transaction(s) needed + 1 main transaction`
+              : 'Checking allowances... May skip approvals if sufficient'
+          }
+        </p>
+      </div>
 
-          {/* Approval Progress for Rootstock */}
-          {!isEIP5792 && needsApprovals && approvalStep > 0 && (
-            <div className="p-4 rounded-xl border bg-yellow-50 border-yellow-200 overflow-hidden">
-              {(() => {
-                // Clamp the displayed step so it never exceeds total steps (approvals + main tx)
-                const totalSteps = (totalApprovals ?? 0) + 1
-                const displayStep = Math.min(approvalStep ?? 0, totalSteps)
+      {/* Approval Progress for Rootstock */}
+      {!isEIP5792 && needsApprovals && approvalStep > 0 && (
+        <div className="p-4 rounded-xl border bg-yellow-50 border-yellow-200 overflow-hidden">
+          {(() => {
+            // Clamp the displayed step so it never exceeds total steps (approvals + main tx)
+            const totalSteps = (totalApprovals ?? 0) + 1
+            const displayStep = Math.min(approvalStep ?? 0, totalSteps)
 
-                return (
-                  <>
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-sm font-medium text-yellow-700">
-                  Approval Progress
-                </p>
-                <span className="text-xs text-yellow-600">
-                      {displayStep}/{totalSteps}
-                </span>
-              </div>
-              <div className="w-full bg-yellow-200 rounded-full h-2 overflow-hidden">
-                <div 
-                  className="bg-yellow-500 h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${(displayStep / totalSteps) * 100}%` }}
-                ></div>
-              </div>
-              <p className="text-xs mt-2 text-yellow-600">
-                {approvalStep <= totalApprovals 
-                  ? `Approving token ${approvalStep}/${totalApprovals}...`
-                  : 'Executing main transaction...'
-                }
-              </p>
-                  </>
-                )
-              })()}
-            </div>
-          )}
-
-          {/* Transaction Status */}
-          {error && (
-            <div className="flex items-center justify-between p-4 bg-red-50 border border-red-200 rounded-xl">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5 text-red-600" />
-                <div>
-                  <p className="text-sm font-medium text-red-700">Transaction Failed</p>
-                  <p className="text-xs text-red-600">{error}</p>
+            return (
+              <>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm font-medium text-yellow-700">
+                    Approval Progress
+                  </p>
+                  <span className="text-xs text-yellow-600">
+                    {displayStep}/{totalSteps}
+                  </span>
                 </div>
-              </div>
-              {onClearError && (
-                <button
-                  onClick={onClearError}
-                  className="text-red-600 hover:text-red-800 transition-colors"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              )}
-            </div>
-          )}
+                <div className="w-full bg-yellow-200 rounded-full h-2 overflow-hidden">
+                  <div
+                    className="bg-yellow-500 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${(displayStep / totalSteps) * 100}%` }}
+                  ></div>
+                </div>
+                <p className="text-xs mt-2 text-yellow-600">
+                  {approvalStep <= totalApprovals
+                    ? `Approving token ${approvalStep}/${totalApprovals}...`
+                    : 'Executing main transaction...'
+                  }
+                </p>
+              </>
+            )
+          })()}
+        </div>
+      )}
 
-          {(hash || batchId) && !isConfirmed && (
-            <div className="flex items-center gap-2 p-4 bg-blue-50 border border-blue-200 rounded-xl">
-              <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-              <div className="text-sm text-blue-700">
-                <p>{batchId ? 'Batch transaction submitted!' : 'Transaction submitted!'}</p>
-                {hash && (
-                  <p className="font-mono">Hash: {hash.slice(0, 10)}...{hash.slice(-8)}</p>
-                )}
-                {batchId && (
-                  <p className="font-mono">Batch ID: {batchId.slice(0, 10)}...{batchId.slice(-8)}</p>
-                )}
-              </div>
+      {/* Transaction Status */}
+      {error && (
+        <div className="flex items-center justify-between p-4 bg-red-50 border border-red-200 rounded-xl">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-red-600" />
+            <div>
+              <p className="text-sm font-medium text-red-700">Transaction Failed</p>
+              <p className="text-xs text-red-600">{error}</p>
             </div>
+          </div>
+          {onClearError && (
+            <button
+              onClick={onClearError}
+              className="text-red-600 hover:text-red-800 transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           )}
+        </div>
+      )}
+
+      {(hash || batchId) && !isConfirmed && (
+        <div className="flex items-center gap-2 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+          <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          <div className="text-sm text-blue-700">
+            <p>{batchId ? 'Batch transaction submitted!' : 'Transaction submitted!'}</p>
+            {hash && (
+              <p className="font-mono">Hash: {hash.slice(0, 10)}...{hash.slice(-8)}</p>
+            )}
+            {batchId && (
+              <p className="font-mono">Batch ID: {batchId.slice(0, 10)}...{batchId.slice(-8)}</p>
+            )}
+          </div>
+        </div>
+      )}
 
 
       {/* Warning */}
@@ -459,52 +458,52 @@ export function SwapDepositInterface({
         </div>
       )}
 
-          {/* Action Button */}
-          <button
-            onClick={onSwapAndDeposit}
-            disabled={!hasValidAmounts || isLoading}
-            className="w-full btn-primary text-xl py-4 flex items-center justify-center gap-3"
-          >
-            {isLoading ? (
-              <>
-                <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                {batchId ? 'Confirming Batch Transaction...' : 'Preparing Batch Transaction...'}
-              </>
-            ) : isConfirmed ? (
-              <>
-                <span className="text-lg">✓</span>
-                {batchId ? 'Batch Transaction Confirmed!' : 'Transaction Confirmed!'}
-              </>
-            ) : (
-              <>
-                <Zap className="w-6 h-6" />
-                {chainId === 84532
-                  ? `Batch: Approve & Swap & Stake ${estimatedRIF.toFixed(2)} tRIF`
-                  : needsApprovals 
-                    ? `Approve & Swap & Stake ${estimatedRIF.toFixed(2)} tRIF`
-                    : `Swap & Stake ${estimatedRIF.toFixed(2)} tRIF`
-                }
-              </>
-            )}
-          </button>
+      {/* Action Button */}
+      <button
+        onClick={onSwapAndDeposit}
+        disabled={!hasValidAmounts || isLoading}
+        className="w-full btn-primary text-xl py-4 flex items-center justify-center gap-3"
+      >
+        {isLoading ? (
+          <>
+            <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            {batchId ? 'Confirming Batch Transaction...' : 'Preparing Batch Transaction...'}
+          </>
+        ) : isConfirmed ? (
+          <>
+            <span className="text-lg">✓</span>
+            {batchId ? 'Batch Transaction Confirmed!' : 'Transaction Confirmed!'}
+          </>
+        ) : (
+          <>
+            <Zap className="w-6 h-6" />
+            {chainId === 84532
+              ? `Batch: Approve & Swap & Stake ${estimatedRIF.toFixed(2)} tRIF`
+              : needsApprovals
+                ? `Approve & Swap & Stake ${estimatedRIF.toFixed(2)} tRIF`
+                : `Swap & Stake ${estimatedRIF.toFixed(2)} tRIF`
+            }
+          </>
+        )}
+      </button>
 
-          {/* Transaction Steps */}
-          <div className="text-center text-sm text-gray-500">
-            <p className="mb-2">
-              {chainId === 84532 ? 'This batch transaction will:' : 'These transactions will:'}
-            </p>
-            <div className="flex justify-center gap-6 flex-wrap">
-              {needsApprovals && <span>1. Approve tokens</span>}
-              <span>{needsApprovals ? '2.' : '1.'} Swap to tRIF</span>
-              <span>{needsApprovals ? '3.' : '2.'} Auto-stake</span>
-            </div>
-            <p className={`text-xs mt-2 ${chainId === 84532 ? 'text-green-600' : 'text-blue-600'}`}>
-              {chainId === 84532 
-                ? '✨ All steps executed atomically in one transaction'
-                : '⚡ Multiple transactions for maximum compatibility'
-              }
-            </p>
-          </div>
+      {/* Transaction Steps */}
+      <div className="text-center text-sm text-gray-500">
+        <p className="mb-2">
+          {chainId === 84532 ? 'This batch transaction will:' : 'These transactions will:'}
+        </p>
+        <div className="flex justify-center gap-6 flex-wrap">
+          {needsApprovals && <span>1. Approve tokens</span>}
+          <span>{needsApprovals ? '2.' : '1.'} Swap to tRIF</span>
+          <span>{needsApprovals ? '3.' : '2.'} Auto-stake</span>
+        </div>
+        <p className={`text-xs mt-2 ${chainId === 84532 ? 'text-green-600' : 'text-blue-600'}`}>
+          {chainId === 84532
+            ? '✨ All steps executed atomically in one transaction'
+            : '⚡ Multiple transactions for maximum compatibility'
+          }
+        </p>
+      </div>
     </div>
   )
 }

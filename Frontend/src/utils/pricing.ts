@@ -14,7 +14,7 @@ const PRICE_APIS: PriceApiConfig[] = [
   {
     name: 'GeckoTerminal',
     baseUrl: 'https://api.geckoterminal.com/api/v2',
-    endpoint: (addresses: string[]) => 
+    endpoint: (addresses: string[]) =>
       `/simple/networks/rootstock/token_price/${addresses.map(addr => addr.toLowerCase()).join(',')}`,
     parser: (data: any) => {
       const prices: Record<string, number> = {};
@@ -78,13 +78,13 @@ const TOKEN_ADDRESSES = {
 
 // Fetch prices from a single API with enhanced retry
 async function fetchPricesFromApi(
-  api: PriceApiConfig, 
+  api: PriceApiConfig,
   addresses: string[],
   { maxRetries = 4, baseDelayMs = 1000, backoffMultiplier = 2 } = {}
 ): Promise<Record<string, number>> {
   const url = `${api.baseUrl}${api.endpoint(addresses)}`;
   let attempt = 0;
-  let lastError: Error;
+  let lastError: Error | undefined;
 
   while (attempt <= maxRetries) {
     try {
@@ -104,11 +104,11 @@ async function fetchPricesFromApi(
       }
 
       const data = await response.json();
-      
+
       if (attempt > 0) {
         console.log(`✅ ${api.name} price fetch succeeded on attempt ${attempt + 1}`);
       }
-      
+
       console.log(`${api.name} raw response:`, data);
 
       const prices = api.parser(data);
@@ -118,23 +118,23 @@ async function fetchPricesFromApi(
     } catch (error: any) {
       lastError = error;
       console.warn(`❌ ${api.name} attempt ${attempt + 1} failed:`, error.message);
-      
+
       if (attempt === maxRetries) {
         console.error(`🚨 All ${maxRetries + 1} attempts failed for ${api.name}`);
         throw new Error(`${api.name} failed after ${maxRetries + 1} attempts. Last error: ${error.message}`);
       }
-      
+
       // Exponential backoff with jitter
       const backoffDelay = baseDelayMs * Math.pow(backoffMultiplier, attempt);
       const jitter = Math.random() * 1000; // Add up to 1000ms jitter
       const waitTime = backoffDelay + jitter;
-      
+
       console.log(`⏳ Retrying ${api.name} in ${Math.round(waitTime)}ms...`);
       await new Promise((resolve) => setTimeout(resolve, waitTime));
       attempt += 1;
     }
   }
-  
+
   throw lastError;
 }
 
@@ -144,13 +144,13 @@ export async function fetchTokenPrices(
 ): Promise<Record<string, number>> {
   const addresses = tokenAddresses || Object.values(TOKEN_ADDRESSES);
   const normalizedAddresses = addresses.map(addr => addr.toLowerCase());
-  
+
   // Check cache first
   const now = Date.now();
   if (priceCache.timestamp > 0 && (now - priceCache.timestamp) < priceCache.ttl) {
     const cachedPrices: Record<string, number> = {};
     let hasCachedData = false;
-    
+
     normalizedAddresses.forEach(address => {
       if (priceCache.prices[address] !== undefined) {
         cachedPrices[address] = priceCache.prices[address];
@@ -166,16 +166,16 @@ export async function fetchTokenPrices(
 
   const finalPrices: Record<string, number> = {};
   const missingTokens = [...normalizedAddresses];
-  
+
   // Try APIs in order of priority, collecting prices token by token
   const sortedApis = [...PRICE_APIS].sort((a, b) => a.priority - b.priority);
-  
+
   for (const api of sortedApis) {
     if (missingTokens.length === 0) break;
-    
+
     try {
       console.log(`🔄 Trying ${api.name} for ${missingTokens.length} remaining tokens...`);
-      
+
       // For Blockscout (individual token API), try each missing token separately
       if (api.name === 'Blockscout') {
         for (const tokenAddress of [...missingTokens]) {
@@ -196,7 +196,7 @@ export async function fetchTokenPrices(
       } else {
         // For batch APIs like GeckoTerminal, try all remaining tokens at once
         const prices = await fetchPricesFromApi(api, missingTokens);
-        
+
         // Add successful prices and remove them from missing list
         Object.entries(prices).forEach(([address, price]) => {
           if (price && price > 0) {
@@ -227,7 +227,7 @@ export async function fetchTokenPrices(
     timestamp: now,
     ttl: priceCache.ttl
   };
-  
+
   console.log('🎯 Final price compilation:', finalPrices);
   return finalPrices;
 }
@@ -235,7 +235,7 @@ export async function fetchTokenPrices(
 // Fallback prices when APIs fail
 function getFallbackPrices(addresses: string[]): Record<string, number> {
   const fallbackPrices: Record<string, number> = {};
-  
+
   addresses.forEach(address => {
     const normalizedAddr = address.toLowerCase();
     // Use reasonable fallback prices
@@ -253,7 +253,7 @@ function getFallbackPrices(addresses: string[]): Record<string, number> {
       fallbackPrices[normalizedAddr] = 1.0; // Default fallback
     }
   });
-  
+
   console.log('Using fallback prices:', fallbackPrices);
   return fallbackPrices;
 }
@@ -289,7 +289,7 @@ export function calculateUSDValue(tokenAmount: string, pricePerToken: number): n
 export function formatUSDValue(usdValue: number): string {
   if (usdValue === 0) return '$0.00';
   if (usdValue < 0.01) return '<$0.01';
-  
+
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',

@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
-import { 
-  fetchTokenPrices, 
-  getTokenPrice, 
-  calculateUSDValue, 
-  formatUSDValue 
+import {
+  fetchTokenPrices,
+  getTokenPrice,
+  calculateUSDValue,
+  formatUSDValue
 } from '../utils/pricing';
 
 interface TokenPrice {
@@ -30,22 +30,6 @@ export function useTokenPrices(tokenAddresses?: string[]): UseTokenPricesReturn 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Initialize prices state for given addresses
-  const initializePrices = useCallback((addresses: string[]) => {
-    const initialPrices: Record<string, TokenPrice> = {};
-    addresses.forEach(address => {
-      const normalizedAddr = address.toLowerCase();
-      initialPrices[normalizedAddr] = {
-        address: normalizedAddr,
-        priceUSD: 0,
-        isLoading: true,
-        error: null,
-        lastUpdated: null
-      };
-    });
-    setPrices(prev => ({ ...prev, ...initialPrices }));
-  }, []);
-
   // Fetch prices function
   const fetchPrices = useCallback(async (addresses?: string[]) => {
     if (!addresses || addresses.length === 0) return;
@@ -63,7 +47,7 @@ export function useTokenPrices(tokenAddresses?: string[]): UseTokenPricesReturn 
         addresses.forEach(address => {
           const normalizedAddr = address.toLowerCase();
           const price = priceData[normalizedAddr] || 0;
-          
+
           updated[normalizedAddr] = {
             address: normalizedAddr,
             priceUSD: price,
@@ -143,7 +127,7 @@ export function useTokenPrices(tokenAddresses?: string[]): UseTokenPricesReturn 
         };
       });
       setPrices(initialPrices);
-      
+
       // Fetch prices once
       fetchPrices(tokenAddresses);
     }
@@ -189,7 +173,7 @@ export function useTokenPrice(tokenAddress: string) {
       const priceValue = await getTokenPrice(tokenAddress);
       setPrice(priceValue);
       setLastUpdated(new Date());
-      
+
       if (priceValue === 0) {
         setError('Price not available');
       }

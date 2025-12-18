@@ -19,7 +19,7 @@ const rootstock = defineChain({
   },
 });
 
-interface SwapQuote {
+export interface SwapQuote {
   tokenIn: string;
   tokenOut: string;
   amountIn: bigint;
@@ -35,17 +35,17 @@ interface SwapQuote {
 
 // Enhanced retry mechanism for swap quotes
 async function fetchSwapQuoteWithRetry(
-  params: any, 
+  params: any,
   { maxRetries = 5, baseDelayMs = 1000, backoffMultiplier = 1.5 } = {}
 ): Promise<any> {
   let attempt = 0;
-  let lastError: Error;
-  
+  let lastError: Error | undefined;
+
   while (attempt <= maxRetries) {
     try {
       console.log(`Attempting swap quote (${attempt + 1}/${maxRetries + 1})...`);
       const result = await getSwap(params);
-      
+
       if (attempt > 0) {
         console.log(`✅ Swap quote succeeded on attempt ${attempt + 1}`);
       }
@@ -54,23 +54,23 @@ async function fetchSwapQuoteWithRetry(
     } catch (error: any) {
       lastError = error;
       console.warn(`❌ Swap quote attempt ${attempt + 1} failed:`, error.message);
-      
+
       if (attempt === maxRetries) {
         console.error(`🚨 All ${maxRetries + 1} swap quote attempts failed`);
         throw new Error(`Swap quote API failed after ${maxRetries + 1} attempts. Last error: ${error.message}`);
       }
-      
+
       // Exponential backoff with jitter
       const backoffDelay = baseDelayMs * Math.pow(backoffMultiplier, attempt);
       const jitter = Math.random() * 500; // Add up to 500ms jitter
       const waitTime = backoffDelay + jitter;
-      
+
       console.log(`⏳ Retrying in ${Math.round(waitTime)}ms...`);
       await new Promise((resolve) => setTimeout(resolve, waitTime));
       attempt += 1;
     }
   }
-  
+
   throw lastError;
 }
 
@@ -113,7 +113,7 @@ export async function getSwapQuote(
 
     if (data.status === 'Success') {
       const { tx, route, amountOut, assumedAmountOut, priceImpact } = data;
-      
+
       console.log('Sushi API response details:', {
         status: data.status,
         amountOut: amountOut,
@@ -122,11 +122,11 @@ export async function getSwapQuote(
         priceImpact: priceImpact,
         tx: tx ? { to: tx.to, value: tx.value, dataLength: tx.data?.length } : null
       });
-      
+
       // Extract the expected output amount
       let outputAmount = 0n;
       let formattedOutput = '0';
-      
+
       // Try multiple ways to extract the output amount
       try {
         if (assumedAmountOut && assumedAmountOut !== '0') {
@@ -157,21 +157,21 @@ export async function getSwapQuote(
         console.error('Error parsing amountOut:', parseError);
         quote.error = `Failed to parse output amount: ${parseError}`;
       }
-      
+
       quote.amountOut = outputAmount;
       quote.amountOutFormatted = formattedOutput;
       quote.priceImpact = priceImpact || 0;
       quote.calldata = tx.data;
       quote.route = route;
       quote.success = true;
-      
+
       // Try to estimate gas
       try {
         const publicClient = createPublicClient({
           chain: rootstock,
           transport: http(NETWORK_CONFIG.rpcUrl),
         });
-        
+
         const gasEstimate = await publicClient.estimateGas({
           account: tx.from as `0x${string}`,
           to: tx.to,
@@ -182,14 +182,14 @@ export async function getSwapQuote(
       } catch (gasError) {
         console.log('Gas estimation failed (non-critical):', gasError);
       }
-      
+
       console.log('Swap quote successful:', {
         amountIn: amountIn.toString(),
         amountOut: outputAmount.toString(),
         amountOutFormatted: formattedOutput,
         priceImpact: quote.priceImpact
       });
-      
+
     } else {
       quote.error = `Swap quote failed: ${data.status}`;
       console.error('Swap quote failed:', data);
@@ -198,7 +198,7 @@ export async function getSwapQuote(
     quote.error = `Failed to get swap quote: ${error.message}`;
     console.error('Error getting swap quote:', error);
   }
-  
+
   return quote;
 }
 
@@ -214,7 +214,7 @@ export async function getMultipleSwapQuotes(
   }
 
   console.log('Getting quotes for multiple tokens:', tokens.length);
-  
+
   // Get quotes in parallel for better performance
   const promises = tokens.map(async (token, index) => {
     try {
@@ -231,7 +231,7 @@ export async function getMultipleSwapQuotes(
           error: 'Invalid amount'
         } as SwapQuote;
       }
-      
+
       return await getSwapQuote(token, amounts[index], sender, maxSlippage);
     } catch (error: any) {
       return {
@@ -249,13 +249,13 @@ export async function getMultipleSwapQuotes(
   });
 
   const results = await Promise.all(promises);
-  
+
   console.log('Multiple quotes completed:', {
     total: results.length,
     successful: results.filter(r => r.success).length,
     failed: results.filter(r => !r.success).length
   });
-  
+
   return results;
 }
 
@@ -267,15 +267,15 @@ export function calculateTotalRIFOutput(quotes: SwapQuote[]): {
   successfulQuotes: number;
 } {
   const successfulQuotes = quotes.filter(q => q.success);
-  
+
   const totalRIF = successfulQuotes.reduce((sum, quote) => sum + quote.amountOut, 0n);
   const totalRIFFormatted = formatUnits(totalRIF, 18);
-  
+
   // Calculate weighted average price impact
-  const totalPriceImpact = successfulQuotes.length > 0 
+  const totalPriceImpact = successfulQuotes.length > 0
     ? successfulQuotes.reduce((sum, quote) => sum + quote.priceImpact, 0) / successfulQuotes.length
     : 0;
-  
+
   return {
     totalRIF,
     totalRIFFormatted,
@@ -288,10 +288,10 @@ export function calculateTotalRIFOutput(quotes: SwapQuote[]): {
 export function formatRIFAmount(amount: bigint, decimals: number = 4): string {
   const formatted = formatUnits(amount, 18);
   const num = parseFloat(formatted);
-  
+
   if (num === 0) return '0';
   if (num < 0.0001) return '<0.0001';
-  
+
   return new Intl.NumberFormat('en-US', {
     minimumFractionDigits: 2,
     maximumFractionDigits: decimals

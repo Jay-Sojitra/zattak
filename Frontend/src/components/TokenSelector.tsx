@@ -1,8 +1,8 @@
-import React, { useState } from 'react'
-import { Plus, Minus, Coins, Copy, Check, RefreshCw } from 'lucide-react'
+import React, { useState, useMemo } from 'react'
+import { Plus, Minus, Coins, Copy, Check, RefreshCw, Filter } from 'lucide-react'
 import { useAccount, useBalance } from 'wagmi'
-import { formatUnits } from 'viem'
-import { TOKENS } from '../constants/tokens'
+import { formatUnits, getAddress } from 'viem'
+import { getFeaturedTokens, searchTokens, AVAILABLE_TAGS, getTagInfo, type Token } from '../constants/tokens'
 import { useTokenPrices } from '../hooks/useTokenPrices'
 import type { SelectedToken } from '../types'
 
@@ -11,68 +11,73 @@ interface TokenSelectorProps {
   selectedTokens: SelectedToken[]
 }
 
-// Available tokens for Rootstock mainnet - using real token addresses
-const AVAILABLE_TOKENS = [
-  {
-    address: TOKENS.RUSDT.address,
-    symbol: TOKENS.RUSDT.symbol,
-    name: TOKENS.RUSDT.name,
-    decimals: TOKENS.RUSDT.decimals,
-    logoUrl: TOKENS.RUSDT.logoUrl
-  },
-  {
-    address: TOKENS.USDT.address,
-    symbol: TOKENS.USDT.symbol,
-    name: TOKENS.USDT.name,
-    decimals: TOKENS.USDT.decimals,
-    logoUrl: TOKENS.USDT.logoUrl
-  },
-  {
-    address: TOKENS.RBTC.address,
-    symbol: TOKENS.RBTC.symbol,
-    name: TOKENS.RBTC.name,
-    decimals: TOKENS.RBTC.decimals,
-    logoUrl: TOKENS.RBTC.logoUrl
-  },
-  {
-    address: TOKENS.WETH.address,
-    symbol: TOKENS.WETH.symbol,
-    name: TOKENS.WETH.name,
-    decimals: TOKENS.WETH.decimals,
-    logoUrl: TOKENS.WETH.logoUrl
-  }
-]
-
 // Custom hook to fetch token balance
-function useTokenBalance(tokenAddress: string, decimals: number) {
-  const { address } = useAccount()
-  
-  // All tokens are ERC20 tokens, including rBTC at the specified contract address
-  const { data: balance, isLoading, error } = useBalance({
+function useTokenBalance(tokenAddress: string, decimals: number, symbol: string) {
+  const { address, isConnected, chain } = useAccount()
+
+  // Convert to checksummed address using viem's getAddress()
+  const checksummedTokenAddress = React.useMemo(() => {
+    try {
+      return getAddress(tokenAddress)
+    } catch (error) {
+      console.error(`[TokenBalance] Invalid address format for ${symbol}:`, tokenAddress, error)
+      return tokenAddress as `0x${string}`
+    }
+  }, [tokenAddress, symbol])
+
+  // Add detailed logging
+  React.useEffect(() => {
+    console.log(`[TokenBalance Debug] ${symbol}:`, {
+      originalAddress: tokenAddress,
+      checksummedAddress: checksummedTokenAddress,
+      userAddress: address,
+      isConnected,
+      chainId: chain?.id,
+      chainName: chain?.name,
+      decimals
+    })
+  }, [tokenAddress, checksummedTokenAddress, address, isConnected, chain, decimals, symbol])
+
+  // All tokens are ERC20 tokens
+  const { data: balance, isLoading, error, isError } = useBalance({
     address: address,
-    token: tokenAddress.trim() as `0x${string}`, // Trim any whitespace
+    token: checksummedTokenAddress,
   })
 
-  // Debug logging
+  // Log balance fetch results
   React.useEffect(() => {
     if (address && tokenAddress) {
-      console.log(`Fetching balance for token: ${tokenAddress.trim()}, user: ${address}`)
-      if (error) {
-        console.error(`Balance fetch error for ${tokenAddress}:`, error)
-      }
-      if (balance) {
-        console.log(`Balance for ${tokenAddress}: ${balance.value.toString()} (${formatUnits(balance.value, decimals)})`)
+      if (isLoading) {
+        console.log(`[Balance] ${symbol}: Loading...`)
+      } else if (error || isError) {
+        console.error(`[Balance ERROR] ${symbol}:`, {
+          error,
+          isError,
+          errorMessage: error?.message,
+          tokenAddress,
+          userAddress: address,
+          chainId: chain?.id
+        })
+      } else if (balance) {
+        console.log(`[Balance SUCCESS] ${symbol}:`, {
+          raw: balance.value.toString(),
+          formatted: formatUnits(balance.value, decimals),
+          decimals,
+          symbol: balance.symbol
+        })
+      } else {
+        console.warn(`[Balance] ${symbol}: No data returned (not loading, no error, but no balance)`)
       }
     }
-  }, [address, tokenAddress, balance, error, decimals])
+  }, [balance, isLoading, error, isError, address, tokenAddress, symbol, decimals, chain])
 
   const formattedBalance = balance ? formatUnits(balance.value, decimals) : '0'
-  
+
   return {
     balance: formattedBalance,
     isLoading,
     raw: balance?.value || 0n,
-    error
+    error: error || (isError ? new Error('Unknown error fetching balance') : undefined)
   }
 }
 
@@ -86,7 +91,7 @@ function TokenCard({
   getPrice,
   formatValue
 }: {
-  token: typeof AVAILABLE_TOKENS[0]
+  token: Token
   isSelected: boolean
   selectedToken?: SelectedToken
   onToggle: () => void
@@ -94,7 +99,7 @@ function TokenCard({
   getPrice: (address: string) => number
   formatValue: (address: string, amount: string) => string
 }) {
-  const { balance, isLoading, error } = useTokenBalance(token.address, token.decimals)
+  const { balance, isLoading, error } = useTokenBalance(token.address, token.decimals, token.symbol)
   const [copied, setCopied] = useState(false)
 
   const handleCopyAddress = async (e: React.MouseEvent) => {
@@ -129,8 +134,8 @@ function TokenCard({
   return (
     <div
       className={`p-4 border-2 rounded-xl transition-all cursor-pointer ${isSelected
-          ? 'border-rootstock-orange bg-orange-50'
-          : 'border-gray-200 hover:border-rootstock-orange'
+        ? 'border-rootstock-orange bg-orange-50'
+        : 'border-gray-200 hover:border-rootstock-orange'
         }`}
       onClick={() => !isSelected && onToggle()}
     >
@@ -138,10 +143,14 @@ function TokenCard({
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full flex items-center justify-center bg-white border border-gray-200 p-1">
             <img
-              src={token.logoUrl}
+              src={token.logoURI}
               alt={token.symbol}
               className="w-full h-full object-contain"
-              loading="eager"
+              loading="lazy"
+              onError={(e) => {
+                // Fallback to a generic token icon
+                e.currentTarget.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v12M6 12h12"/></svg>'
+              }}
             />
           </div>
           <div className="flex-1">
@@ -159,7 +168,7 @@ function TokenCard({
                 )}
               </button>
             </div>
-            <p className="text-sm text-gray-500">{token.name}</p>
+            <p className="text-sm text-gray-500 truncate max-w-[150px]" title={token.name}>{token.name}</p>
             {tokenPrice > 0 && (
               <p className="text-xs text-gray-400">${tokenPrice.toFixed(4)} USD</p>
             )}
@@ -172,8 +181,8 @@ function TokenCard({
             onToggle()
           }}
           className={`p-2 rounded-full transition-colors ${isSelected
-              ? 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              : 'bg-rootstock-orange text-white hover:bg-rootstock-orange-dark'
+            ? 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            : 'bg-rootstock-orange text-white hover:bg-rootstock-orange-dark'
             }`}
         >
           {isSelected ? <Minus className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
@@ -185,16 +194,22 @@ function TokenCard({
         <div className="font-semibold">
           {isLoading ? (
             displayBalance
+          ) : error ? (
+            <div>
+              <span>0.00</span>
+              <p className="text-xs text-red-400 mt-1">Unable to fetch</p>
+            </div>
           ) : (
             <div>
-              <span>{displayBalance} {token.symbol}</span>
-              {!error && tokenPrice > 0 && parseFloat(balance) > 0 && (
+              <span>{displayBalance}</span>
+              {tokenPrice > 0 && parseFloat(balance) > 0 && (
                 <p className="text-sm text-gray-400 mt-1">{balanceUSD}</p>
               )}
             </div>
           )}
         </div>
       </div>
+
 
       {/* Amount Input for Selected Tokens */}
       {isSelected && (
@@ -238,18 +253,43 @@ function TokenCard({
 
 export function TokenSelector({ onTokenSelect, selectedTokens }: TokenSelectorProps) {
   const [searchTerm, setSearchTerm] = useState('')
+  const [selectedTag, setSelectedTag] = useState<string | null>(null)
+  const [showFeaturedOnly, setShowFeaturedOnly] = useState(true)
   const { address } = useAccount()
-  
+
+  // Get tokens based on filters
+  const availableTokens = useMemo(() => {
+    let tokens: Token[]
+
+    // Start with featured or all tokens
+    if (showFeaturedOnly) {
+      tokens = getFeaturedTokens()
+    } else {
+      tokens = searchTokens('') // Get all tokens
+    }
+
+    // Filter by tag if selected
+    if (selectedTag) {
+      tokens = tokens.filter(token => token.tags.includes(selectedTag))
+    }
+
+    // Filter by search term
+    if (searchTerm.trim()) {
+      const lowerSearch = searchTerm.toLowerCase().trim()
+      tokens = tokens.filter(token =>
+        token.symbol.toLowerCase().includes(lowerSearch) ||
+        token.name.toLowerCase().includes(lowerSearch)
+      )
+    }
+
+    return tokens
+  }, [searchTerm, selectedTag, showFeaturedOnly])
+
   // Get prices for all available tokens
-  const tokenAddresses = AVAILABLE_TOKENS.map(token => token.address)
+  const tokenAddresses = availableTokens.map(token => token.address)
   const { getPrice, formatValue, refreshPrices, isLoading: pricesLoading, error: pricesError } = useTokenPrices(tokenAddresses)
 
-  const filteredTokens = AVAILABLE_TOKENS.filter(token =>
-    token.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    token.name.toLowerCase().includes(searchTerm.toLowerCase())
-  )
-
-  const handleTokenToggle = (token: typeof AVAILABLE_TOKENS[0]) => {
+  const handleTokenToggle = (token: Token) => {
     const isSelected = selectedTokens.some(t => t.address === token.address)
 
     if (isSelected) {
@@ -257,11 +297,15 @@ export function TokenSelector({ onTokenSelect, selectedTokens }: TokenSelectorPr
       const updated = selectedTokens.filter(t => t.address !== token.address)
       onTokenSelect(updated)
     } else {
-      // Add token with placeholder balance (will be updated by real balance)
+      // Add token
       const newToken: SelectedToken = {
-        ...token,
+        address: token.address,
+        symbol: token.symbol,
+        name: token.name,
+        decimals: token.decimals,
+        logoUrl: token.logoURI,
         amount: '',
-        balance: '0' // This will be overridden by real balance display
+        balance: '0'
       }
       onTokenSelect([...selectedTokens, newToken])
     }
@@ -275,7 +319,6 @@ export function TokenSelector({ onTokenSelect, selectedTokens }: TokenSelectorPr
   }
 
   const getTotalUSDValue = () => {
-    // Calculate total USD value using real prices
     return selectedTokens.reduce((total, token) => {
       const amount = parseFloat(token.amount || '0')
       const price = getPrice(token.address)
@@ -283,31 +326,79 @@ export function TokenSelector({ onTokenSelect, selectedTokens }: TokenSelectorPr
     }, 0)
   }
 
+  // Clear all filters
+  const clearFilters = () => {
+    setSearchTerm('')
+    setSelectedTag(null)
+    setShowFeaturedOnly(true)
+  }
+
   return (
     <div className="space-y-6">
-      {/* Search and Price Refresh */}
-      <div className="flex gap-3">
-        <div className="relative flex-1">
-          <input
-            type="text"
-            placeholder="Search tokens..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="input-field pl-10"
-          />
-          <Coins className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+      {/* Search and Filters */}
+      <div className="space-y-3">
+        <div className="flex gap-3">
+          <div className="relative flex-1">
+            <input
+              type="text"
+              placeholder="Search tokens..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="input-field pl-10"
+            />
+            <Coins className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          </div>
+
+          {/* Price Refresh Button */}
+          <button
+            onClick={refreshPrices}
+            disabled={pricesLoading}
+            className="px-4 py-2 bg-rootstock-orange text-white rounded-lg hover:bg-rootstock-orange-dark transition-colors disabled:opacity-50 flex items-center gap-2"
+            title="Refresh token prices"
+          >
+            <RefreshCw className={`w-4 h-4 ${pricesLoading ? 'animate-spin' : ''}`} />
+            {pricesLoading ? 'Updating...' : 'Refresh Prices'}
+          </button>
         </div>
-        
-        {/* Price Refresh Button */}
-        <button
-          onClick={refreshPrices}
-          disabled={pricesLoading}
-          className="px-4 py-2 bg-rootstock-orange text-white rounded-lg hover:bg-rootstock-orange-dark transition-colors disabled:opacity-50 flex items-center gap-2"
-          title="Refresh token prices"
-        >
-          <RefreshCw className={`w-4 h-4 ${pricesLoading ? 'animate-spin' : ''}`} />
-          {pricesLoading ? 'Updating...' : 'Refresh Prices'}
-        </button>
+
+        {/* Show Featured / All Toggle and Tag Filters */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <button
+            onClick={() => setShowFeaturedOnly(!showFeaturedOnly)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${showFeaturedOnly
+              ? 'bg-rootstock-orange text-white'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+          >
+            {showFeaturedOnly ? 'Showing Featured' : 'Showing All'} ({availableTokens.length} tokens)
+          </button>
+
+          {/* Tag Filter Buttons */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <Filter className="w-4 h-4 text-gray-500" />
+            {AVAILABLE_TAGS.filter(tag => tag !== 'featured').slice(0, 5).map(tag => (
+              <button
+                key={tag}
+                onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
+                className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${selectedTag === tag
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                title={getTagInfo(tag)?.description}
+              >
+                {getTagInfo(tag)?.name || tag}
+              </button>
+            ))}
+            {(searchTerm || selectedTag || !showFeaturedOnly) && (
+              <button
+                onClick={clearFilters}
+                className="px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-600 hover:bg-red-200"
+              >
+                Clear Filters
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Price Error */}
@@ -325,9 +416,20 @@ export function TokenSelector({ onTokenSelect, selectedTokens }: TokenSelectorPr
             <p>Connect your wallet to see token balances</p>
           </div>
         )}
-        {address && (
+        {address && availableTokens.length === 0 && (
+          <div className="text-center py-8 text-gray-500">
+            <p>No tokens found matching your filters</p>
+            <button
+              onClick={clearFilters}
+              className="mt-2 text-rootstock-orange hover:underline"
+            >
+              Clear filters
+            </button>
+          </div>
+        )}
+        {address && availableTokens.length > 0 && (
           <div className="grid sm:grid-cols-2 gap-4">
-            {filteredTokens.map((token) => {
+            {availableTokens.map((token) => {
               const isSelected = selectedTokens.some(t => t.address === token.address)
               const selectedToken = selectedTokens.find(t => t.address === token.address)
 
