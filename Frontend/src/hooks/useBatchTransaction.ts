@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
 import { useAccount, useConfig, useWriteContract, useWaitForTransactionReceipt, useChainId, usePublicClient } from 'wagmi'
-import { encodeFunctionData, parseUnits } from 'viem'
+import { encodeFunctionData, parseUnits, getAddress } from 'viem'
 import type { Address } from 'viem'
 import { sendCalls } from "@wagmi/core"
 import { CONTRACTS } from '../constants/tokens'
@@ -50,13 +50,13 @@ export function useBatchTransaction() {
   const wagmiConfig = useConfig()
   const chainId = useChainId()
   const publicClient = usePublicClient()
-  
+
   // Traditional wagmi hooks for Rootstock
   const { writeContract, writeContractAsync, data: hash, error: writeError, isPending } = useWriteContract()
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
     hash,
   })
-  
+
   const [state, setState] = useState<BatchTransactionState>({
     isLoading: false,
     batchId: null,
@@ -67,7 +67,7 @@ export function useBatchTransaction() {
     totalApprovals: 0,
     isEIP5792: false
   })
-  
+
   // Check if we should use EIP-5792 (Base Sepolia = 84532, for Rootstock mainnet = 30, use traditional flow)
   const shouldUseEIP5792 = chainId === 84532
 
@@ -82,7 +82,7 @@ export function useBatchTransaction() {
         console.error('Public client not available')
         return 0n
       }
-      
+
       const result = await publicClient.readContract({
         address: tokenAddress,
         abi: ERC20_ABI,
@@ -109,21 +109,22 @@ export function useBatchTransaction() {
     const tokenAddresses: Address[] = []
     const tokenAmounts: bigint[] = []
 
-    // Convert token amounts to wei
+    // Convert token amounts to wei and ensure addresses are checksummed
     selectedTokens.forEach(token => {
       if (token.amount && parseFloat(token.amount) > 0) {
-        tokenAddresses.push(token.address as Address)
-        
+        // Use getAddress to ensure proper checksum
+        tokenAddresses.push(getAddress(token.address) as Address)
+
         // Convert amount to wei based on token decimals
         const amountInWei = parseUnits(token.amount, token.decimals)
         tokenAmounts.push(amountInWei)
       }
     })
 
-    setState(prev => ({ 
-      ...prev, 
-      isLoading: true, 
-      error: null, 
+    setState(prev => ({
+      ...prev,
+      isLoading: true,
+      error: null,
       needsApprovals: tokenAddresses.length > 0,
       totalApprovals: tokenAddresses.length,
       isEIP5792: shouldUseEIP5792,
@@ -140,7 +141,7 @@ export function useBatchTransaction() {
       }
     } catch (error: any) {
       console.error('Transaction error:', error)
-      
+
       let errorMessage = 'Failed to execute transaction'
       if (error.message?.includes('User rejected')) {
         errorMessage = 'Transaction was rejected by user'
@@ -150,10 +151,10 @@ export function useBatchTransaction() {
         errorMessage = error.message
       }
 
-      setState(prev => ({ 
-        ...prev, 
-        isLoading: false, 
-        error: errorMessage 
+      setState(prev => ({
+        ...prev,
+        isLoading: false,
+        error: errorMessage
       }))
 
       return { success: false, error: errorMessage }
@@ -179,12 +180,12 @@ export function useBatchTransaction() {
         address,
         CONTRACTS.RIF_DEPOSITER as Address
       )
-      
+
       console.log(`Token ${tokenAddresses[i]} - Current allowance: ${currentAllowance.toString()}, Required: ${tokenAmounts[i].toString()}`)
-      
+
       if (currentAllowance < tokenAmounts[i]) {
         console.log(`Adding approval call for token: ${tokenAddresses[i]}`)
-        
+
         const approveCalldata = encodeFunctionData({
           abi: ERC20_ABI,
           functionName: "approve",
@@ -227,10 +228,10 @@ export function useBatchTransaction() {
     // Send batch calls using wagmi
     const { id } = await sendCalls(wagmiConfig, { calls })
 
-    setState(prev => ({ 
-      ...prev, 
+    setState(prev => ({
+      ...prev,
       batchId: id,
-      isLoading: false 
+      isLoading: false
     }))
 
     return { success: true, batchId: id }
@@ -259,19 +260,19 @@ export function useBatchTransaction() {
 
       // Step 2: Check allowances and execute approvals only if needed
       const approvalsNeeded: Array<{ tokenAddress: Address; amount: bigint; index: number }> = []
-      
+
       setState(prev => ({ ...prev, approvalStep: 2 }))
       console.log('Checking allowances for tokens...')
-      
+
       for (let i = 0; i < tokenAddresses.length; i++) {
         const currentAllowance = await checkAllowance(
           tokenAddresses[i],
           address,
           CONTRACTS.RIF_DEPOSITER as Address
         )
-        
+
         console.log(`Token ${tokenAddresses[i]} - Current allowance: ${currentAllowance.toString()}, Required: ${tokenAmounts[i].toString()}`)
-        
+
         if (currentAllowance < tokenAmounts[i]) {
           approvalsNeeded.push({
             tokenAddress: tokenAddresses[i],
@@ -284,8 +285,8 @@ export function useBatchTransaction() {
         }
       }
 
-      setState(prev => ({ 
-        ...prev, 
+      setState(prev => ({
+        ...prev,
         totalApprovals: approvalsNeeded.length,
         needsApprovals: approvalsNeeded.length > 0,
         approvalStep: 3
@@ -295,9 +296,9 @@ export function useBatchTransaction() {
       for (let i = 0; i < approvalsNeeded.length; i++) {
         const approval = approvalsNeeded[i]
         setState(prev => ({ ...prev, approvalStep: 3 + i }))
-        
+
         console.log(`Approving token ${i + 1}/${approvalsNeeded.length}: ${approval.tokenAddress}`)
-        
+
         // Execute approval transaction and stop flow if user rejects
         try {
           await writeContractAsync({
@@ -337,7 +338,7 @@ export function useBatchTransaction() {
 
       // Step 4: Execute main contract call with generated calldata
       setState(prev => ({ ...prev, approvalStep: 3 + approvalsNeeded.length + 1 }))
-      
+
       console.log('Executing main contract call with generated calldata')
 
       try {
@@ -370,19 +371,19 @@ export function useBatchTransaction() {
         return { success: false, error: message }
       }
 
-      setState(prev => ({ 
-        ...prev, 
+      setState(prev => ({
+        ...prev,
         hash: hash || null,
-        isLoading: false 
+        isLoading: false
       }))
 
       return { success: true, hash: hash }
     } catch (error: any) {
       console.error('Rootstock flow error:', error)
-      setState(prev => ({ 
-        ...prev, 
+      setState(prev => ({
+        ...prev,
         error: `Calldata generation failed: ${error.message}`,
-        isLoading: false 
+        isLoading: false
       }))
       return { success: false, error: error.message }
     }

@@ -273,12 +273,13 @@ export function TokenSelector({ onTokenSelect, selectedTokens }: TokenSelectorPr
       tokens = tokens.filter(token => token.tags.includes(selectedTag))
     }
 
-    // Filter by search term
+    // Filter by search term (symbol, name, or address)
     if (searchTerm.trim()) {
       const lowerSearch = searchTerm.toLowerCase().trim()
       tokens = tokens.filter(token =>
         token.symbol.toLowerCase().includes(lowerSearch) ||
-        token.name.toLowerCase().includes(lowerSearch)
+        token.name.toLowerCase().includes(lowerSearch) ||
+        token.address.toLowerCase().includes(lowerSearch)
       )
     }
 
