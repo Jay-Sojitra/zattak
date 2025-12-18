@@ -2,7 +2,7 @@ import { ExternalLink, Github, Twitter, MessageCircle } from 'lucide-react'
 
 export function Footer() {
   return (
-    <footer className="bg-gray-900 text-gray-300 mt-20">
+    <footer className="bg-gray-900 dark:bg-dark-secondary text-gray-300 dark:text-dark-text-secondary mt-20 transition-colors duration-300">
       <div className="container mx-auto px-4 py-12">
         <div className="grid md:grid-cols-4 gap-8">
           {/* Brand */}
@@ -12,12 +12,12 @@ export function Footer() {
                 <img src="/logo_light.jpg" alt="Rootstock Logo" className="w-6 h-6 object-contain" />
               </div>
               <div>
-                <h3 className="text-white font-bold">RIF Staking</h3>
-                <p className="text-xs text-gray-400">Rootstock Mainnet</p>
+                <h3 className="text-white dark:text-dark-text-primary font-bold text-lg tracking-tight">RIF Staking Hub</h3>
+                <p className="text-xs text-gray-400 dark:text-gray-500 font-medium">Rootstock Mainnet</p>
               </div>
             </div>
-            <p className="text-sm text-gray-400 max-w-xs">
-              The easiest way to swap any token to tRIF and start earning staking rewards on Rootstock.
+            <p className="text-sm text-gray-400 dark:text-gray-500 max-w-xs leading-relaxed">
+              The simplest way to swap and stake on Rootstock. One click, zero hassle.
             </p>
           </div>
 
@@ -116,8 +116,8 @@ export function Footer() {
         {/* Bottom */}
         <div className="border-t border-gray-800 pt-8 mt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
-            <p className="text-sm text-gray-400">
-              © 2024 RIF Staking Platform. Built for Rootstock Mainnet.
+            <p className="text-sm text-gray-400 dark:text-gray-600">
+              © 2024 Zattak. All rights reserved.
             </p>
             <div className="flex items-center gap-6 mt-4 md:mt-0 text-sm">
               <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>

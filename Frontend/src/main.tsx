@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
+import { ThemeProvider } from './contexts/ThemeContext'
 
 import '@rainbow-me/rainbowkit/styles.css'
 import { getDefaultConfig, RainbowKitProvider } from '@rainbow-me/rainbowkit'
@@ -57,7 +58,7 @@ const rootstockTestnet = {
 } as const
 
 const config = getDefaultConfig({
-  appName: 'RIF Staking Hub',
+  appName: 'Zattak',
   projectId: 'YOUR_PROJECT_ID', // Get this from WalletConnect Cloud
   chains: [rootstockMainnet, baseSepolia, rootstockTestnet],
   ssr: false,
@@ -67,12 +68,14 @@ const queryClient = new QueryClient()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <WagmiProvider config={config}>
-      <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider>
-          <App />
-        </RainbowKitProvider>
-      </QueryClientProvider>
-    </WagmiProvider>
+    <ThemeProvider>
+      <WagmiProvider config={config}>
+        <QueryClientProvider client={queryClient}>
+          <RainbowKitProvider>
+            <App />
+          </RainbowKitProvider>
+        </QueryClientProvider>
+      </WagmiProvider>
+    </ThemeProvider>
   </StrictMode>,
 )

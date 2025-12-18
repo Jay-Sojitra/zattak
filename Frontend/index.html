@@ -4,13 +4,13 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/jpeg" href="/logo_light.jpg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Swap any token to tRIF and stake in one click on Rootstock testnet. Maximize your returns with our seamless multi-token swapping and staking solution." />
-    <meta name="keywords" content="RIF, Rootstock, staking, DeFi, crypto, swap, tRIF, RSK, testnet" />
-    <meta property="og:title" content="RIF Staking Platform - Rootstock Testnet" />
-    <meta property="og:description" content="The easiest way to swap tokens to tRIF and start earning staking rewards on Rootstock." />
+    <meta name="description" content="Zattak - Advanced DeFi platform for Rootstock Mainnet. Swap tokens and manage your crypto assets with ease." />
+    <meta name="keywords" content="Zattak, DeFi, Rootstock, crypto, swap, trading, RSK, Mainnet, Bitcoin" />
+    <meta property="og:title" content="Zattak - Rootstock DeFi Platform" />
+    <meta property="og:description" content="Advanced DeFi platform for Rootstock - swap tokens and manage your crypto assets with ease." />
     <meta property="og:type" content="website" />
     
-    <title>RIF Staking Platform - Rootstock Testnet</title>
+    <title>Zattak - Rootstock DeFi Platform</title>
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,6 +18,16 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   </head>
   <body>
+    <!-- Theme initialization script to prevent FOUC -->
+    <script>
+      (function() {
+        const theme = localStorage.getItem('zattak-theme') || 
+                     (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        if (theme === 'dark') {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

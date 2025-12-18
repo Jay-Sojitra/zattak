@@ -134,14 +134,14 @@ function TokenCard({
   return (
     <div
       className={`p-4 border-2 rounded-xl transition-all cursor-pointer ${isSelected
-        ? 'border-rootstock-orange bg-orange-50'
-        : 'border-gray-200 hover:border-rootstock-orange'
+        ? 'border-rootstock-orange bg-orange-50 dark:bg-rootstock-orange/10'
+        : 'border-gray-200 hover:border-rootstock-orange dark:border-dark-tertiary dark:hover:border-rootstock-orange dark:bg-dark-secondary'
         }`}
       onClick={() => !isSelected && onToggle()}
     >
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full flex items-center justify-center bg-white border border-gray-200 p-1">
+          <div className="w-10 h-10 rounded-full flex items-center justify-center bg-white border border-gray-200 p-1 dark:bg-dark-tertiary dark:border-dark-tertiary">
             <img
               src={token.logoURI}
               alt={token.symbol}
@@ -155,7 +155,7 @@ function TokenCard({
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <p className="font-semibold text-gray-800">{token.symbol}</p>
+              <p className="font-semibold text-gray-800 dark:text-dark-text-primary">{token.symbol}</p>
               <button
                 onClick={handleCopyAddress}
                 className="p-1 hover:bg-gray-100 rounded transition-colors group"
@@ -168,7 +168,7 @@ function TokenCard({
                 )}
               </button>
             </div>
-            <p className="text-sm text-gray-500 truncate max-w-[150px]" title={token.name}>{token.name}</p>
+            <p className="text-sm text-gray-500 truncate max-w-[150px] dark:text-dark-text-secondary" title={token.name}>{token.name}</p>
             {tokenPrice > 0 && (
               <p className="text-xs text-gray-400">${tokenPrice.toFixed(4)} USD</p>
             )}
@@ -181,7 +181,7 @@ function TokenCard({
             onToggle()
           }}
           className={`p-2 rounded-full transition-colors ${isSelected
-            ? 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            ? 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-dark-tertiary dark:text-gray-400 dark:hover:bg-dark-tertiary/80'
             : 'bg-rootstock-orange text-white hover:bg-rootstock-orange-dark'
             }`}
         >
@@ -190,7 +190,7 @@ function TokenCard({
       </div>
 
       <div className="text-right">
-        <p className="text-sm text-gray-500">Balance</p>
+        <p className="text-sm text-gray-500 dark:text-dark-text-secondary">Balance</p>
         <div className="font-semibold">
           {isLoading ? (
             displayBalance
@@ -212,42 +212,44 @@ function TokenCard({
 
 
       {/* Amount Input for Selected Tokens */}
-      {isSelected && (
-        <div className="mt-4 pt-4 border-t border-gray-200">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Amount to swap
-          </label>
-          <div className="flex gap-2">
-            <div className="flex-1">
-              <input
-                type="number"
-                placeholder="0.00"
-                value={selectedToken?.amount || ''}
-                onChange={(e) => onAmountChange(e.target.value)}
-                className="input-field text-lg"
-                step="0.01"
-                min="0"
-                max={maxAmount}
+      {
+        isSelected && (
+          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-dark-tertiary">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Amount to swap
+            </label>
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <input
+                  type="number"
+                  placeholder="0.00"
+                  value={selectedToken?.amount || ''}
+                  onChange={(e) => onAmountChange(e.target.value)}
+                  className="input-field text-lg dark:bg-dark-tertiary dark:text-white dark:border-dark-tertiary"
+                  step="0.01"
+                  min="0"
+                  max={maxAmount}
+                  disabled={isLoading}
+                />
+                {/* USD Value Display */}
+                {selectedToken?.amount && parseFloat(selectedToken.amount) > 0 && tokenPrice > 0 && (
+                  <div className="mt-2 text-sm text-gray-500">
+                    ≈ {formatValue(token.address, selectedToken.amount)}
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={() => onAmountChange(maxAmount)}
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 dark:bg-dark-tertiary dark:hover:bg-dark-tertiary/80 dark:text-gray-300"
                 disabled={isLoading}
-              />
-              {/* USD Value Display */}
-              {selectedToken?.amount && parseFloat(selectedToken.amount) > 0 && tokenPrice > 0 && (
-                <div className="mt-2 text-sm text-gray-500">
-                  ≈ {formatValue(token.address, selectedToken.amount)}
-                </div>
-              )}
+              >
+                MAX
+              </button>
             </div>
-            <button
-              onClick={() => onAmountChange(maxAmount)}
-              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
-              disabled={isLoading}
-            >
-              MAX
-            </button>
           </div>
-        </div>
-      )}
-    </div>
+        )
+      }
+    </div >
   )
 }
 
@@ -345,7 +347,7 @@ export function TokenSelector({ onTokenSelect, selectedTokens }: TokenSelectorPr
               placeholder="Search tokens..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="input-field pl-10"
+              className="input-field pl-10 dark:bg-dark-tertiary dark:border-dark-tertiary dark:text-white dark:placeholder-gray-500"
             />
             <Coins className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
           </div>
@@ -368,7 +370,7 @@ export function TokenSelector({ onTokenSelect, selectedTokens }: TokenSelectorPr
             onClick={() => setShowFeaturedOnly(!showFeaturedOnly)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${showFeaturedOnly
               ? 'bg-rootstock-orange text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-dark-tertiary dark:text-gray-300 dark:hover:bg-dark-tertiary/80'
               }`}
           >
             {showFeaturedOnly ? 'Showing Featured' : 'Showing All'} ({availableTokens.length} tokens)
@@ -383,7 +385,7 @@ export function TokenSelector({ onTokenSelect, selectedTokens }: TokenSelectorPr
                 onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
                 className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${selectedTag === tag
                   ? 'bg-blue-500 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-dark-tertiary dark:text-gray-400 dark:hover:bg-dark-tertiary/80'
                   }`}
                 title={getTagInfo(tag)?.description}
               >
@@ -411,7 +413,7 @@ export function TokenSelector({ onTokenSelect, selectedTokens }: TokenSelectorPr
 
       {/* Available Tokens */}
       <div className="grid gap-4">
-        <h3 className="font-semibold text-gray-700">Available Tokens</h3>
+        <h3 className="font-semibold text-gray-700 dark:text-dark-text-primary">Available Tokens</h3>
         {!address && (
           <div className="text-center py-8 text-gray-500">
             <p>Connect your wallet to see token balances</p>
@@ -453,19 +455,19 @@ export function TokenSelector({ onTokenSelect, selectedTokens }: TokenSelectorPr
 
       {/* Selected Tokens Summary */}
       {selectedTokens.length > 0 && (
-        <div className="card-gradient rounded-xl p-6">
-          <h3 className="font-semibold text-gray-700 mb-4">Selected Tokens Summary</h3>
+        <div className="card-gradient rounded-xl p-6 dark:from-dark-secondary dark:to-black">
+          <h3 className="font-semibold text-gray-700 mb-4 dark:text-white">Selected Tokens Summary</h3>
           <div className="space-y-3">
             {selectedTokens.map((token) => (
               <div key={token.address} className="flex justify-between items-center">
-                <span className="font-medium">{token.symbol}</span>
-                <span className="text-gray-600">
+                <span className="font-medium dark:text-gray-200">{token.symbol}</span>
+                <span className="text-gray-600 dark:text-gray-400">
                   {token.amount || '0'} {token.symbol}
                 </span>
               </div>
             ))}
-            <div className="border-t pt-3 flex justify-between items-center font-semibold">
-              <span>Total Value (Est.)</span>
+            <div className="border-t pt-3 flex justify-between items-center font-semibold dark:border-white/10">
+              <span className="dark:text-gray-300">Total Value (Est.)</span>
               <span className="text-rootstock-orange font-bold">${getTotalUSDValue().toFixed(2)}</span>
             </div>
           </div>
