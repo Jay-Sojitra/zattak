@@ -376,19 +376,26 @@ export function SwapDepositInterface({
 
           {/* Approval Progress for Rootstock */}
           {!isEIP5792 && needsApprovals && approvalStep > 0 && (
-            <div className="p-4 rounded-xl border bg-yellow-50 border-yellow-200">
+            <div className="p-4 rounded-xl border bg-yellow-50 border-yellow-200 overflow-hidden">
+              {(() => {
+                // Clamp the displayed step so it never exceeds total steps (approvals + main tx)
+                const totalSteps = (totalApprovals ?? 0) + 1
+                const displayStep = Math.min(approvalStep ?? 0, totalSteps)
+
+                return (
+                  <>
               <div className="flex items-center justify-between mb-2">
                 <p className="text-sm font-medium text-yellow-700">
                   Approval Progress
                 </p>
                 <span className="text-xs text-yellow-600">
-                  {approvalStep}/{totalApprovals + 1}
+                      {displayStep}/{totalSteps}
                 </span>
               </div>
-              <div className="w-full bg-yellow-200 rounded-full h-2">
+              <div className="w-full bg-yellow-200 rounded-full h-2 overflow-hidden">
                 <div 
                   className="bg-yellow-500 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${(approvalStep / (totalApprovals + 1)) * 100}%` }}
+                        style={{ width: `${(displayStep / totalSteps) * 100}%` }}
                 ></div>
               </div>
               <p className="text-xs mt-2 text-yellow-600">
@@ -397,6 +404,9 @@ export function SwapDepositInterface({
                   : 'Executing main transaction...'
                 }
               </p>
+                  </>
+                )
+              })()}
             </div>
           )}
 

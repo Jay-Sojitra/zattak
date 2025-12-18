@@ -52,7 +52,7 @@ export function useBatchTransaction() {
   const publicClient = usePublicClient()
   
   // Traditional wagmi hooks for Rootstock
-  const { writeContract, data: hash, error: writeError, isPending } = useWriteContract()
+  const { writeContract, writeContractAsync, data: hash, error: writeError, isPending } = useWriteContract()
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
     hash,
   })
@@ -188,7 +188,7 @@ export function useBatchTransaction() {
         const approveCalldata = encodeFunctionData({
           abi: ERC20_ABI,
           functionName: "approve",
-          args: [CONTRACTS.RIF_BATCH_DEPOSITER as Address, tokenAmounts[i]],
+          args: [CONTRACTS.RIF_DEPOSITER as Address, tokenAmounts[i]],
         })
 
         calls.push({
@@ -298,13 +298,38 @@ export function useBatchTransaction() {
         
         console.log(`Approving token ${i + 1}/${approvalsNeeded.length}: ${approval.tokenAddress}`)
         
-        // Execute approval transaction
-        writeContract({
-          address: approval.tokenAddress,
-          abi: ERC20_ABI,
-          functionName: 'approve',
-          args: [CONTRACTS.RIF_DEPOSITER as Address, approval.amount],
-        })
+        // Execute approval transaction and stop flow if user rejects
+        try {
+          await writeContractAsync({
+            address: approval.tokenAddress,
+            abi: ERC20_ABI,
+            functionName: 'approve',
+            args: [CONTRACTS.RIF_DEPOSITER as Address, approval.amount],
+          })
+        } catch (error: any) {
+          console.error('Approval transaction rejected or failed:', error)
+          const rawMessage = error?.shortMessage || error?.message || 'Failed to execute approval transaction'
+          const isUserRejected = rawMessage.toLowerCase().includes('user rejected') || rawMessage.toLowerCase().includes('rejected the request')
+          const message = isUserRejected ? 'You rejected the approval transaction' : rawMessage
+
+          setState(prev => ({
+            ...prev,
+            isLoading: false,
+            error: message,
+          }))
+
+          // Auto-clear error after a short delay
+          setTimeout(() => {
+            setState(prev => ({
+              ...prev,
+              error: null,
+              approvalStep: 0,
+              needsApprovals: prev.needsApprovals, // keep flag so UI context remains if needed
+            }))
+          }, 2500)
+
+          return { success: false, error: message }
+        }
 
         // Add a small delay to prevent rapid-fire transactions
         await new Promise(resolve => setTimeout(resolve, 1000))
@@ -314,13 +339,36 @@ export function useBatchTransaction() {
       setState(prev => ({ ...prev, approvalStep: 3 + approvalsNeeded.length + 1 }))
       
       console.log('Executing main contract call with generated calldata')
-      
-      writeContract({
-        address: CONTRACTS.RIF_DEPOSITER as Address,
-        abi: RIFDepositerABI.abi,
-        functionName: 'executeCallsAndDeposit',
-        args: [tokenAddresses, tokenAmounts, callDataArray],
-      })
+
+      try {
+        await writeContractAsync({
+          address: CONTRACTS.RIF_DEPOSITER as Address,
+          abi: RIFDepositerABI.abi,
+          functionName: 'executeCallsAndDeposit',
+          args: [tokenAddresses, tokenAmounts, callDataArray],
+        })
+      } catch (error: any) {
+        console.error('Main transaction rejected or failed:', error)
+        const rawMessage = error?.shortMessage || error?.message || 'Failed to execute main transaction'
+        const isUserRejected = rawMessage.toLowerCase().includes('user rejected') || rawMessage.toLowerCase().includes('rejected the request')
+        const message = isUserRejected ? 'You rejected the main transaction' : rawMessage
+
+        setState(prev => ({
+          ...prev,
+          isLoading: false,
+          error: message,
+        }))
+
+        setTimeout(() => {
+          setState(prev => ({
+            ...prev,
+            error: null,
+            approvalStep: 0,
+          }))
+        }, 2500)
+
+        return { success: false, error: message }
+      }
 
       setState(prev => ({ 
         ...prev, 
@@ -338,89 +386,6 @@ export function useBatchTransaction() {
       }))
       return { success: false, error: error.message }
     }
-  }, [writeContract, hash, address, checkAllowance])
-
-  // Traditional flow for Rootstock (separate approvals + main tx)
-  const executeTraditionalFlow = useCallback(async (
-    tokenAddresses: Address[],
-    tokenAmounts: bigint[],
-    totalRIFAmount: bigint
-  ) => {
-    if (!address) return { success: false, error: 'No address' }
-
-    // Step 1: Check allowances and execute approvals only if needed
-    const approvalsNeeded: Array<{ tokenAddress: Address; amount: bigint; index: number }> = []
-    
-    console.log('Checking allowances for tokens...')
-    
-    for (let i = 0; i < tokenAddresses.length; i++) {
-      const currentAllowance = await checkAllowance(
-        tokenAddresses[i],
-        address,
-        CONTRACTS.RIF_DEPOSITER as Address
-      )
-      
-      console.log(`Token ${tokenAddresses[i]} - Current allowance: ${currentAllowance.toString()}, Required: ${tokenAmounts[i].toString()}`)
-      
-      if (currentAllowance < tokenAmounts[i]) {
-        approvalsNeeded.push({
-          tokenAddress: tokenAddresses[i],
-          amount: tokenAmounts[i],
-          index: i
-        })
-        console.log(`Approval needed for token ${i + 1}: ${tokenAddresses[i]}`)
-      } else {
-        console.log(`Sufficient allowance for token ${i + 1}: ${tokenAddresses[i]}`)
-      }
-    }
-
-    setState(prev => ({ 
-      ...prev, 
-      totalApprovals: approvalsNeeded.length,
-      needsApprovals: approvalsNeeded.length > 0
-    }))
-
-    // Execute approvals only for tokens that need them
-    for (let i = 0; i < approvalsNeeded.length; i++) {
-      const approval = approvalsNeeded[i]
-      setState(prev => ({ ...prev, approvalStep: i + 1 }))
-      
-      console.log(`Approving token ${i + 1}/${approvalsNeeded.length}: ${approval.tokenAddress}`)
-      
-      // Execute approval transaction
-      writeContract({
-        address: approval.tokenAddress,
-        abi: ERC20_ABI,
-        functionName: 'approve',
-        args: [CONTRACTS.RIF_BATCH_DEPOSITER as Address, approval.amount],
-      })
-
-      // In a real implementation, you'd want to wait for each approval confirmation
-      // For now, we'll proceed to the next approval or main transaction
-      
-      // Add a small delay to prevent rapid-fire transactions
-      await new Promise(resolve => setTimeout(resolve, 1000))
-    }
-
-    // Step 2: Execute main contract call
-    setState(prev => ({ ...prev, approvalStep: approvalsNeeded.length + 1 }))
-    
-    console.log('Executing main contract call')
-    
-    writeContract({
-      address: CONTRACTS.RIF_BATCH_DEPOSITER as Address,
-      abi: RIFDepositerABI.abi,
-      functionName: 'executeCallsAndDeposit',
-      args: [tokenAddresses, tokenAmounts, totalRIFAmount],
-    })
-
-    setState(prev => ({ 
-      ...prev, 
-      hash: hash || null,
-      isLoading: false 
-    }))
-
-    return { success: true, hash: hash }
   }, [writeContract, hash, address, checkAllowance])
 
   // Reset state
