@@ -9,7 +9,7 @@ export function Footer() {
           <div className="space-y-4">
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center bg-white/20 border border-rootstock-orange/30">
-                <img src="/logo_light.jpg" alt="Rootstock Logo" className="w-6 h-6 object-contain" />
+                <img src="/logo_light-1.png" alt="Rootstock Logo" className="w-6 h-6 object-contain" />
               </div>
               <div>
                 <h3 className="text-white dark:text-dark-text-primary font-bold text-lg tracking-tight">RIF Staking Hub</h3>

@@ -11,7 +11,7 @@ export function Header() {
           {/* Logo and Brand */}
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center bg-white dark:bg-dark-tertiary">
-              <img src="/logo_light.jpg" alt="Zattak Logo" className="w-8 h-8 object-contain" />
+              <img src="/logo_light-1.png" alt="Zattak Logo" className="w-8 h-8 object-contain" />
             </div>
             <div>
               <h1 className="text-xl font-bold text-gray-800 dark:text-dark-text-primary">Zattak</h1>

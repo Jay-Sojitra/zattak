@@ -14,7 +14,7 @@ import { baseSepolia } from 'wagmi/chains'
 const rootstockMainnet = {
   id: 30,
   name: 'Rootstock Mainnet',
-  iconUrl: '/logo_light.jpg',
+  iconUrl: '/logo_light-1.png',
   iconBackground: '#FF6600',
   nativeCurrency: {
     decimals: 18,
@@ -39,7 +39,7 @@ const rootstockMainnet = {
 const rootstockTestnet = {
   id: 31,
   name: 'Rootstock Testnet',
-  iconUrl: '/logo_light.jpg',
+  iconUrl: '/logo_light-1.png',
   iconBackground: '#FFA500',
   nativeCurrency: {
     decimals: 18,

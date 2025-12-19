@@ -414,12 +414,8 @@ export function TokenSelector({ onTokenSelect, selectedTokens }: TokenSelectorPr
       {/* Available Tokens */}
       <div className="grid gap-4">
         <h3 className="font-semibold text-gray-700 dark:text-dark-text-primary">Available Tokens</h3>
-        {!address && (
-          <div className="text-center py-8 text-gray-500">
-            <p>Connect your wallet to see token balances</p>
-          </div>
-        )}
-        {address && availableTokens.length === 0 && (
+
+        {availableTokens.length === 0 && (
           <div className="text-center py-8 text-gray-500">
             <p>No tokens found matching your filters</p>
             <button
@@ -430,7 +426,8 @@ export function TokenSelector({ onTokenSelect, selectedTokens }: TokenSelectorPr
             </button>
           </div>
         )}
-        {address && availableTokens.length > 0 && (
+
+        {availableTokens.length > 0 && (
           <div className="grid sm:grid-cols-2 gap-4">
             {availableTokens.map((token) => {
               const isSelected = selectedTokens.some(t => t.address === token.address)

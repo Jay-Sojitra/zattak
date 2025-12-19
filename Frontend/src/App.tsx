@@ -6,8 +6,10 @@ import { SwapDepositInterface } from './components/SwapDepositInterface'
 import { Header } from './components/Header'
 import { Footer } from './components/Footer'
 import { StatsSection } from './components/StatsSection'
+
 import { useBatchTransaction } from './hooks/useBatchTransaction'
 import type { SelectedToken } from './types'
+import { DotGridBackground } from './components/DotGridBackground'
 
 function App() {
   const { isConnected } = useAccount()
@@ -61,46 +63,48 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:bg-dark-primary dark:bg-none transition-colors duration-300">
-      <Header />
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:bg-dark-primary dark:bg-none transition-colors duration-300 relative overflow-hidden">
+      <DotGridBackground />
 
-      <main className="container mx-auto px-4 py-8">
-        <div className="text-center mb-12 animate-fadeIn relative">
-          <h1 className="text-5xl md:text-6xl font-bold text-rootstock-orange mb-6 tracking-tight">
-            The Easiest Way to Stake RIF
-          </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto mb-10 leading-relaxed">
-            No complex steps. Just swap any token to tRIF and stake in one click.
-            Maximize your Rootstock rewards effortlessly.
-          </p>
-          <div className="flex justify-center items-center gap-6 text-sm font-medium text-gray-500 dark:text-gray-400">
-            <div className="flex items-center gap-2 bg-white/50 dark:bg-dark-tertiary/50 px-3 py-1.5 rounded-full backdrop-blur-sm border border-gray-100 dark:border-white/5">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              Rootstock Testnet
-            </div>
-            <div className="flex items-center gap-2 bg-white/50 dark:bg-dark-tertiary/50 px-3 py-1.5 rounded-full backdrop-blur-sm border border-gray-100 dark:border-white/5">
-              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-              SushiSwap Integrated
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
-              Auto-Staking
+      <div className="relative z-10">
+        <Header />
+
+        <main className="container mx-auto px-4 py-8">
+          <div className="text-center mb-12 animate-fadeIn relative">
+            <h1 className="text-5xl md:text-6xl font-bold text-rootstock-orange mb-6 tracking-tight">
+              The Easiest Way to Stake RIF
+            </h1>
+            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto mb-10 leading-relaxed">
+              No complex steps. Just swap any token to tRIF and stake in one click.
+              Maximize your Rootstock rewards effortlessly.
+            </p>
+            <div className="flex justify-center items-center gap-6 text-sm font-medium text-gray-500 dark:text-gray-400">
+              <div className="flex items-center gap-2 bg-white/50 dark:bg-dark-tertiary/50 px-3 py-1.5 rounded-full backdrop-blur-sm border border-gray-100 dark:border-white/5">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                Rootstock Testnet
+              </div>
+              <div className="flex items-center gap-2 bg-white/50 dark:bg-dark-tertiary/50 px-3 py-1.5 rounded-full backdrop-blur-sm border border-gray-100 dark:border-white/5">
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                SushiSwap Integrated
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
+                Auto-Staking
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Stats Section */}
-        <StatsSection />
+          {/* Stats Section */}
+          <StatsSection />
 
-        {/* Main Interface */}
-        <div className="max-w-4xl mx-auto space-y-8">
-          {/* Wallet Connection */}
-          {/* <div className="card">
-            <WalletConnect />
-          </div> */}
+          {/* Main Interface */}
+          <div className="max-w-4xl mx-auto space-y-8">
+            {/* Wallet Connection */}
+            {/* <div className="card">
+              <WalletConnect />
+            </div> */}
 
-          {/* Token Selection */}
-          {isConnected && (
+            {/* Token Selection */}
             <div className="card animate-slideUp" style={{ animationDelay: '0.1s' }}>
               <h2 className="text-2xl font-semibold mb-6 text-gray-800 dark:text-dark-text-primary">
                 Select Tokens to Swap & Trade
@@ -110,67 +114,67 @@ function App() {
                 selectedTokens={selectedTokens}
               />
             </div>
-          )}
 
-          {/* Swap and Deposit Interface */}
-          {isConnected && selectedTokens.length > 0 && (
-            <div className="card animate-slideUp" style={{ animationDelay: '0.2s' }}>
-              <SwapDepositInterface
-                selectedTokens={selectedTokens}
-                onSwapAndDeposit={handleSwapAndDeposit}
-                isLoading={isLoading}
-                hash={hash || (batchId as `0x${string}` | undefined)}
-                isConfirmed={isConfirmed}
-                error={error}
-                onClearError={handleClearError}
-                needsApprovals={needsApprovals}
-                batchId={batchId}
-                approvalStep={approvalStep}
-                totalApprovals={totalApprovals}
-                isEIP5792={shouldUseEIP5792}
-                chainId={chainId}
-              />
-            </div>
-          )}
-        </div>
-
-        {/* Feature Highlights */}
-        {/* <div className="max-w-6xl mx-auto mt-16">
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="card-gradient text-center hover:scale-105 transition-transform duration-300 animate-slideUp" style={{ animationDelay: '0.3s' }}>
-              <div className="w-16 h-16 bg-blue-100 dark:bg-rootstock-orange/10 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
-                🔄
+            {/* Swap and Deposit Interface */}
+            {selectedTokens.length > 0 && (
+              <div className="card animate-slideUp" style={{ animationDelay: '0.2s' }}>
+                <SwapDepositInterface
+                  selectedTokens={selectedTokens}
+                  onSwapAndDeposit={handleSwapAndDeposit}
+                  isLoading={isLoading}
+                  hash={hash || (batchId as `0x${string}` | undefined)}
+                  isConfirmed={isConfirmed}
+                  error={error}
+                  onClearError={handleClearError}
+                  needsApprovals={needsApprovals}
+                  batchId={batchId}
+                  approvalStep={approvalStep}
+                  totalApprovals={totalApprovals}
+                  isEIP5792={shouldUseEIP5792}
+                  chainId={chainId}
+                />
               </div>
-              <h3 className="text-xl font-bold mb-2 dark:text-white">Any Token In</h3>
-              <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
-                Swap USDT, rUSDT, or any other token directly to tRIF in a single transaction.
-              </p>
-            </div>
-
-            <div className="card-gradient text-center hover:scale-105 transition-transform duration-300 animate-slideUp" style={{ animationDelay: '0.4s' }}>
-              <div className="w-16 h-16 bg-blue-100 dark:bg-rootstock-orange/10 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
-                ⚡
-              </div>
-              <h3 className="text-xl font-bold mb-2 dark:text-white">One-Click Staking</h3>
-              <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
-                Skip the complex steps. We handle the swap and stake automatically for you.
-              </p>
-            </div>
-
-            <div className="card-gradient text-center hover:scale-105 transition-transform duration-300 animate-slideUp" style={{ animationDelay: '0.5s' }}>
-              <div className="w-16 h-16 bg-blue-100 dark:bg-rootstock-orange/10 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
-                📈
-              </div>
-              <h3 className="text-xl font-bold mb-2 dark:text-white">Automatic Rewards</h3>
-              <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
-                Start earning staking APY immediately. Your tokens work for you from day one.
-              </p>
-            </div>
+            )}
           </div>
-        </div> */}
-      </main>
 
-      <Footer />
+          {/* Feature Highlights */}
+          {/* <div className="max-w-6xl mx-auto mt-16">
+            <div className="grid md:grid-cols-3 gap-8">
+              <div className="card-gradient text-center hover:scale-105 transition-transform duration-300 animate-slideUp" style={{ animationDelay: '0.3s' }}>
+                <div className="w-16 h-16 bg-blue-100 dark:bg-rootstock-orange/10 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+                  🔄
+                </div>
+                <h3 className="text-xl font-bold mb-2 dark:text-white">Any Token In</h3>
+                <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
+                  Swap USDT, rUSDT, or any other token directly to tRIF in a single transaction.
+                </p>
+              </div>
+
+              <div className="card-gradient text-center hover:scale-105 transition-transform duration-300 animate-slideUp" style={{ animationDelay: '0.4s' }}>
+                <div className="w-16 h-16 bg-blue-100 dark:bg-rootstock-orange/10 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+                  ⚡
+                </div>
+                <h3 className="text-xl font-bold mb-2 dark:text-white">One-Click Staking</h3>
+                <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
+                  Skip the complex steps. We handle the swap and stake automatically for you.
+                </p>
+              </div>
+
+              <div className="card-gradient text-center hover:scale-105 transition-transform duration-300 animate-slideUp" style={{ animationDelay: '0.5s' }}>
+                <div className="w-16 h-16 bg-blue-100 dark:bg-rootstock-orange/10 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+                  📈
+                </div>
+                <h3 className="text-xl font-bold mb-2 dark:text-white">Automatic Rewards</h3>
+                <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
+                  Start earning staking APY immediately. Your tokens work for you from day one.
+                </p>
+              </div>
+            </div>
+          </div> */}
+        </main>
+
+        <Footer />
+      </div>
 
       {/* Success Modal */}
       {showSuccessModal && (batchId || hash) && (
