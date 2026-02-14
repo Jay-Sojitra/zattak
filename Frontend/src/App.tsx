@@ -12,7 +12,7 @@ import type { SelectedToken } from './types'
 import { DotGridBackground } from './components/DotGridBackground'
 
 function App() {
-  const { isConnected } = useAccount()
+  // const { isConnected } = useAccount()
   const [selectedTokens, setSelectedTokens] = useState<SelectedToken[]>([])
   const [showSuccessModal, setShowSuccessModal] = useState(false)
 

@@ -257,7 +257,7 @@ export function TokenSelector({ onTokenSelect, selectedTokens }: TokenSelectorPr
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedTag, setSelectedTag] = useState<string | null>(null)
   const [showFeaturedOnly, setShowFeaturedOnly] = useState(true)
-  const { address } = useAccount()
+  // const { address } = useAccount()
 
   // Get tokens based on filters
   const availableTokens = useMemo(() => {
